@@ -135,13 +135,34 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
 
+  // Delete user profile
+  app.delete("/api/user/profile", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      await storage.deleteUser(req.user.id);
+      req.logout((err) => {
+        if (err) throw err;
+        res.sendStatus(200);
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting profile" });
+    }
+  });
+
   // Update user profile
   app.patch("/api/user/profile", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
       const data = updateUserSchema.parse(req.body);
+
+      // If changing password, verify current password first
       if (data.password) {
+        const user = await storage.getUser(req.user.id);
+        if (!user || !(await comparePasswords(req.body.currentPassword, user.password))) {
+          return res.status(400).json({ message: "Current password is incorrect" });
+        }
         data.password = await hashPassword(data.password);
       }
 
@@ -152,9 +173,10 @@ export function setupAuth(app: Express) {
         res.status(400).json({ message: "Invalid data" });
         return;
       }
-      throw error;
+      res.status(500).json({ message: "Error updating profile" });
     }
   });
+
 
   // Request password reset
   app.post("/api/forgot-password", async (req, res) => {

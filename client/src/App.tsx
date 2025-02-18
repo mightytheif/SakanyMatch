@@ -10,6 +10,7 @@ import Search from "@/pages/search";
 import Lifestyle from "@/pages/lifestyle";
 import Property from "@/pages/property";
 import AuthPage from "@/pages/auth";
+import ProfilePage from "@/pages/profile";
 import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <ProtectedRoute path="/search" component={Search} />
       <ProtectedRoute path="/lifestyle" component={Lifestyle} />
       <ProtectedRoute path="/property/:id" component={Property} />
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -60,6 +60,11 @@ export function Navbar() {
                   <DropdownMenuItem disabled>
                     Signed in as {user.name}
                   </DropdownMenuItem>
+                  <Link href="/profile">
+                    <DropdownMenuItem>
+                      Profile Settings
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
                     Sign Out
                   </DropdownMenuItem>
