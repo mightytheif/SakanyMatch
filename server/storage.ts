@@ -71,10 +71,10 @@ export class MemStorage implements IStorage {
   private seedProperties() {
     const sampleProperties: InsertProperty[] = [
       {
-        title: "Modern Downtown Apartment",
-        description: "Beautiful modern apartment in the heart of downtown",
+        title: "Modern Almalq Apartment",
+        description: "Beautiful modern apartment in the prestigious Almalq district",
         price: 500000,
-        location: "Downtown",
+        location: "Almalq",
         bedrooms: 2,
         bathrooms: 2,
         area: 1200,
@@ -84,10 +84,10 @@ export class MemStorage implements IStorage {
         userId: 1
       },
       {
-        title: "Suburban Family Home",
-        description: "Spacious family home in a quiet neighborhood",
+        title: "Spacious Almoroj Villa",
+        description: "Elegant family villa in the quiet Almoroj neighborhood",
         price: 750000,
-        location: "Suburbs",
+        location: "Almoroj",
         bedrooms: 4,
         bathrooms: 3,
         area: 2500,
