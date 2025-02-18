@@ -4,6 +4,10 @@ import {
   type Property,
   type InsertProperty,
 } from "@shared/schema";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
@@ -13,6 +17,7 @@ export interface IStorage {
   getProperty(id: number): Promise<Property | undefined>;
   getAllProperties(): Promise<Property[]>;
   getFeaturedProperties(): Promise<Property[]>;
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
@@ -20,13 +25,17 @@ export class MemStorage implements IStorage {
   private properties: Map<number, Property>;
   private currentUserId: number;
   private currentPropertyId: number;
+  public sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
     this.properties = new Map();
     this.currentUserId = 1;
     this.currentPropertyId = 1;
-    
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+
     // Add some sample properties
     this.seedProperties();
   }
@@ -66,7 +75,11 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      preferences: null 
+    };
     this.users.set(id, user);
     return user;
   }
@@ -86,7 +99,9 @@ export class MemStorage implements IStorage {
     const property: Property = {
       ...insertProperty,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      features: insertProperty.features || null,
+      images: insertProperty.images || null,
     };
     this.properties.set(id, property);
     return property;

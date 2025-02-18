@@ -1,10 +1,14 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertPropertySchema, insertUserSchema } from "@shared/schema";
+import { insertPropertySchema } from "@shared/schema";
 import { z } from "zod";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express) {
+  // Set up authentication routes
+  setupAuth(app);
+
   // Properties endpoints
   app.get("/api/properties", async (req, res) => {
     const properties = await storage.getAllProperties();
@@ -26,7 +30,12 @@ export async function registerRoutes(app: Express) {
     res.json(property);
   });
 
+  // Protected route example
   app.post("/api/properties", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
     try {
       const property = insertPropertySchema.parse(req.body);
       const created = await storage.createProperty(property);
@@ -34,21 +43,6 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid property data" });
-        return;
-      }
-      throw error;
-    }
-  });
-
-  // Users endpoints
-  app.post("/api/users", async (req, res) => {
-    try {
-      const user = insertUserSchema.parse(req.body);
-      const created = await storage.createUser(user);
-      res.status(201).json(created);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid user data" });
         return;
       }
       throw error;
