@@ -1,6 +1,7 @@
 import {
   type User,
   type InsertUser,
+  type UpdateUser,
   type Property,
   type InsertProperty,
 } from "@shared/schema";
@@ -10,13 +11,23 @@ import createMemoryStore from "memorystore";
 const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
+  // User management
   createUser(user: InsertUser): Promise<User>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  updateUser(id: number, data: UpdateUser): Promise<User>;
+  deleteUser(id: number): Promise<void>;
+  setPasswordResetToken(email: string, token: string, expires: Date): Promise<void>;
+  getUserByPasswordResetToken(token: string): Promise<User | undefined>;
+  updateTwoFactorSecret(userId: number, secret: string): Promise<void>;
+
+  // Property management
   createProperty(property: InsertProperty): Promise<Property>;
   getProperty(id: number): Promise<Property | undefined>;
   getAllProperties(): Promise<Property[]>;
   getFeaturedProperties(): Promise<Property[]>;
+
   sessionStore: session.Store;
 }
 
@@ -78,6 +89,14 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id,
+      isAdmin: false,
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      lastLoginAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       preferences: null 
     };
     this.users.set(id, user);
@@ -94,14 +113,70 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email
+    );
+  }
+
+  async updateUser(id: number, data: UpdateUser): Promise<User> {
+    const user = await this.getUser(id);
+    if (!user) throw new Error("User not found");
+
+    const updatedUser = {
+      ...user,
+      ...data,
+      updatedAt: new Date(),
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    this.users.delete(id);
+  }
+
+  async setPasswordResetToken(email: string, token: string, expires: Date): Promise<void> {
+    const user = await this.getUserByEmail(email);
+    if (!user) throw new Error("User not found");
+
+    const updatedUser = {
+      ...user,
+      passwordResetToken: token,
+      passwordResetExpires: expires,
+      updatedAt: new Date(),
+    };
+    this.users.set(user.id, updatedUser);
+  }
+
+  async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.passwordResetToken === token && 
+                user.passwordResetExpires && 
+                user.passwordResetExpires > new Date()
+    );
+  }
+
+  async updateTwoFactorSecret(userId: number, secret: string): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+
+    const updatedUser = {
+      ...user,
+      twoFactorSecret: secret,
+      updatedAt: new Date(),
+    };
+    this.users.set(userId, updatedUser);
+  }
+
   async createProperty(insertProperty: InsertProperty): Promise<Property> {
     const id = this.currentPropertyId++;
     const property: Property = {
       ...insertProperty,
       id,
       createdAt: new Date(),
-      features: insertProperty.features || null,
-      images: insertProperty.images || null,
+      features: insertProperty.features ?? [],
+      images: insertProperty.images ?? [],
     };
     this.properties.set(id, property);
     return property;

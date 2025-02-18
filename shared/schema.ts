@@ -8,6 +8,14 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   email: text("email").notNull(),
   name: text("name").notNull(),
+  isAdmin: boolean("is_admin").default(false),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  twoFactorSecret: text("two_factor_secret"),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
   preferences: json("preferences").$type<{
     location: string;
     budget: number;
@@ -39,12 +47,27 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
 });
 
+export const updateUserSchema = z.object({
+  name: z.string().optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(6).optional(),
+  twoFactorEnabled: z.boolean().optional(),
+  lastLoginAt: z.date().optional(),
+  preferences: z.object({
+    location: z.string(),
+    budget: z.number(),
+    propertyType: z.string(),
+    lifestyle: z.array(z.string()),
+  }).optional(),
+});
+
 export const insertPropertySchema = createInsertSchema(properties).omit({
   id: true,
   createdAt: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 export type Property = typeof properties.$inferSelect;
