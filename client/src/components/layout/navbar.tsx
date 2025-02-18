@@ -30,20 +30,24 @@ export function Navbar() {
 
         <NavigationMenu>
           <NavigationMenuList>
-            <NavigationMenuItem>
-              <Link href="/search">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Search
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link href="/lifestyle">
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  Lifestyle Match
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
+            {user && (
+              <>
+                <NavigationMenuItem>
+                  <Link href="/search">
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      Search
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <Link href="/lifestyle">
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      Lifestyle Match
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              </>
+            )}
             {user && (
               <NavigationMenuItem>
                 <Link href="/messages">
