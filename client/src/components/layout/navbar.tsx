@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { User } from "lucide-react";
 
 export function Navbar() {
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <header className="border-b">
@@ -71,14 +71,14 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem disabled>
-                    Signed in as {user.name}
+                    Signed in as {user.displayName}
                   </DropdownMenuItem>
                   <Link href="/profile">
                     <DropdownMenuItem>
                       Profile Settings
                     </DropdownMenuItem>
                   </Link>
-                  <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
+                  <DropdownMenuItem onClick={() => logout()}>
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
