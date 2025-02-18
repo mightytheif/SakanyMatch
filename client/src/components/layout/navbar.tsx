@@ -44,6 +44,15 @@ export function Navbar() {
                 </NavigationMenuLink>
               </Link>
             </NavigationMenuItem>
+            {user && (
+              <NavigationMenuItem>
+                <Link href="/messages">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Messages
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            )}
           </NavigationMenuList>
         </NavigationMenu>
 

@@ -4,6 +4,9 @@ import {
   type UpdateUser,
   type Property,
   type InsertProperty,
+  type Message,
+  type InsertMessage,
+  type Conversation,
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -27,21 +30,36 @@ export interface IStorage {
   getAllProperties(): Promise<Property[]>;
   getFeaturedProperties(): Promise<Property[]>;
 
+  // Chat methods
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessages(conversationId: number): Promise<Message[]>;
+  getConversations(userId: number): Promise<(Conversation & { otherUser: User })[]>;
+  updateConversation(user1Id: number, user2Id: number): Promise<void>;
+  markMessagesAsRead(senderId: number, receiverId: number): Promise<void>;
+
   sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private properties: Map<number, Property>;
+  private messages: Map<number, Message>;
+  private conversations: Map<number, Conversation>;
   private currentUserId: number;
   private currentPropertyId: number;
+  private currentMessageId: number;
+  private currentConversationId: number;
   public sessionStore: session.Store;
 
   constructor() {
     this.users = new Map();
     this.properties = new Map();
+    this.messages = new Map();
+    this.conversations = new Map();
     this.currentUserId = 1;
     this.currentPropertyId = 1;
+    this.currentMessageId = 1;
+    this.currentConversationId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
@@ -185,6 +203,74 @@ export class MemStorage implements IStorage {
 
   async getFeaturedProperties(): Promise<Property[]> {
     return Array.from(this.properties.values()).slice(0, 3);
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = this.currentMessageId++;
+    const message: Message = {
+      ...insertMessage,
+      id,
+      createdAt: new Date(),
+    };
+    this.messages.set(id, message);
+    return message;
+  }
+
+  async getMessages(conversationId: number): Promise<Message[]> {
+    const conversation = this.conversations.get(conversationId);
+    if (!conversation) return [];
+
+    return Array.from(this.messages.values()).filter(
+      (message) =>
+        (message.senderId === conversation.user1Id && message.receiverId === conversation.user2Id) ||
+        (message.senderId === conversation.user2Id && message.receiverId === conversation.user1Id)
+    ).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  async getConversations(userId: number): Promise<(Conversation & { otherUser: User })[]> {
+    const conversations = Array.from(this.conversations.values())
+      .filter((conv) => conv.user1Id === userId || conv.user2Id === userId)
+      .map((conv) => {
+        const otherUserId = conv.user1Id === userId ? conv.user2Id : conv.user1Id;
+        const otherUser = this.users.get(otherUserId);
+        return {
+          ...conv,
+          otherUser: otherUser!,
+        };
+      })
+      .sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime());
+
+    return conversations;
+  }
+
+  async updateConversation(user1Id: number, user2Id: number): Promise<void> {
+    const existingConversation = Array.from(this.conversations.values()).find(
+      (conv) =>
+        (conv.user1Id === user1Id && conv.user2Id === user2Id) ||
+        (conv.user1Id === user2Id && conv.user2Id === user1Id)
+    );
+
+    if (existingConversation) {
+      existingConversation.lastMessageAt = new Date();
+      this.conversations.set(existingConversation.id, existingConversation);
+    } else {
+      const id = this.currentConversationId++;
+      this.conversations.set(id, {
+        id,
+        user1Id,
+        user2Id,
+        lastMessageAt: new Date(),
+      });
+    }
+  }
+
+  async markMessagesAsRead(senderId: number, receiverId: number): Promise<void> {
+    for (const [id, message] of this.messages) {
+      if (message.senderId === senderId && message.receiverId === receiverId) {
+        message.isRead = true;
+        this.messages.set(id, message);
+      }
+    }
   }
 }
 

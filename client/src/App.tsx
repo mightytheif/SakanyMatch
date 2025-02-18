@@ -12,6 +12,7 @@ import Property from "@/pages/property";
 import AuthPage from "@/pages/auth";
 import ProfilePage from "@/pages/profile";
 import { ProtectedRoute } from "@/lib/protected-route";
+import Messages from "@/pages/messages";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <ProtectedRoute path="/lifestyle" component={Lifestyle} />
       <ProtectedRoute path="/property/:id" component={Property} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/messages" component={Messages} />
       <Route component={NotFound} />
     </Switch>
   );

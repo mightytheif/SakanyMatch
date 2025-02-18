@@ -80,8 +80,27 @@ export const insertPropertySchema = createInsertSchema(properties).omit({
   createdAt: true,
 });
 
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").references(() => users.id).notNull(),
+  receiverId: integer("receiver_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  isRead: boolean("is_read").default(false),
+});
+
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  user1Id: integer("user1_id").references(() => users.id).notNull(),
+  user2Id: integer("user2_id").references(() => users.id).notNull(),
+  lastMessageAt: timestamp("last_message_at").defaultNow(),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 export type Property = typeof properties.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;
+export type Conversation = typeof conversations.$inferSelect;
