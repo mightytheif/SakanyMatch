@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -27,12 +26,11 @@ const registerSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  isLandlord: z.boolean().default(false),
 });
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, login, register } = useAuth();
 
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -48,7 +46,6 @@ export default function AuthPage() {
       name: "",
       email: "",
       password: "",
-      isLandlord: false,
     },
   });
 
@@ -73,7 +70,7 @@ export default function AuthPage() {
                 <Form {...loginForm}>
                   <form
                     onSubmit={loginForm.handleSubmit((data) =>
-                      loginMutation.mutate({ email: data.email, password: data.password })
+                      login(data.email, data.password)
                     )}
                     className="space-y-4"
                   >
@@ -103,12 +100,8 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={loginMutation.isPending}
-                    >
-                      {loginMutation.isPending ? "Logging in..." : "Login"}
+                    <Button type="submit" className="w-full">
+                      Login
                     </Button>
                   </form>
                 </Form>
@@ -118,7 +111,7 @@ export default function AuthPage() {
                 <Form {...registerForm}>
                   <form
                     onSubmit={registerForm.handleSubmit((data) =>
-                      registerMutation.mutate(data)
+                      register(data.name, data.email, data.password)
                     )}
                     className="space-y-4"
                   >
@@ -161,31 +154,8 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={registerForm.control}
-                      name="isLandlord"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              I am a landlord
-                            </FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={registerMutation.isPending}
-                    >
-                      {registerMutation.isPending ? "Creating account..." : "Create Account"}
+                    <Button type="submit" className="w-full">
+                      Create Account
                     </Button>
                   </form>
                 </Form>
