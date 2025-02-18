@@ -4,10 +4,10 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
   email: text("email").notNull(),
+  password: text("password").notNull(),
   name: text("name").notNull(),
+  isLandlord: boolean("is_landlord").default(false),
   isAdmin: boolean("is_admin").default(false),
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
   twoFactorSecret: text("two_factor_secret"),
@@ -40,17 +40,31 @@ export const properties = pgTable("properties", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  email: true,
-  name: true,
-});
+export const insertUserSchema = createInsertSchema(users)
+  .omit({ 
+    id: true, 
+    isAdmin: true,
+    twoFactorEnabled: true,
+    twoFactorSecret: true,
+    passwordResetToken: true,
+    passwordResetExpires: true,
+    lastLoginAt: true,
+    createdAt: true,
+    updatedAt: true,
+    preferences: true 
+  })
+  .extend({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    email: z.string().email("Invalid email address"),
+    name: z.string().min(1, "Name is required"),
+    isLandlord: z.boolean()
+  });
 
 export const updateUserSchema = z.object({
   name: z.string().optional(),
   email: z.string().email().optional(),
   password: z.string().min(6).optional(),
+  isLandlord: z.boolean().optional(),
   twoFactorEnabled: z.boolean().optional(),
   lastLoginAt: z.date().optional(),
   preferences: z.object({

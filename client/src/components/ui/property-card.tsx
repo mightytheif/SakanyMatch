@@ -14,7 +14,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
       <CardHeader className="p-0">
         <AspectRatio ratio={16/9}>
           <img 
-            src={property.images[0] || "https://placehold.co/600x400/e5e7eb/a3a3a3?text=No+Image"}
+            src={property.images?.[0] || "https://placehold.co/600x400/e5e7eb/a3a3a3?text=No+Image"}
             alt={property.title}
             className="object-cover w-full h-full"
           />
@@ -24,10 +24,10 @@ export function PropertyCard({ property }: PropertyCardProps) {
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-semibold">{property.title}</h3>
           <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-            ${property.price.toLocaleString()}
+            {property.price.toLocaleString()} SAR
           </Badge>
         </div>
-        
+
         <div className="flex items-center text-muted-foreground mb-2">
           <MapPin size={16} className="mr-1" />
           <span className="text-sm">{property.location}</span>

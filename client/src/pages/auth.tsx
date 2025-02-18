@@ -14,19 +14,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
-  name: z.string().min(1, "Name is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  isLandlord: z.boolean().default(false),
 });
 
 export default function AuthPage() {
@@ -36,7 +37,7 @@ export default function AuthPage() {
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -44,10 +45,10 @@ export default function AuthPage() {
   const registerForm = useForm({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
-      password: "",
-      email: "",
       name: "",
+      email: "",
+      password: "",
+      isLandlord: false,
     },
   });
 
@@ -72,18 +73,18 @@ export default function AuthPage() {
                 <Form {...loginForm}>
                   <form
                     onSubmit={loginForm.handleSubmit((data) =>
-                      loginMutation.mutate(data)
+                      loginMutation.mutate({ email: data.email, password: data.password })
                     )}
                     className="space-y-4"
                   >
                     <FormField
                       control={loginForm.control}
-                      name="username"
+                      name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input type="email" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -149,19 +150,6 @@ export default function AuthPage() {
                     />
                     <FormField
                       control={registerForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
@@ -170,6 +158,25 @@ export default function AuthPage() {
                             <Input type="password" {...field} />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="isLandlord"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              I am a landlord
+                            </FormLabel>
+                          </div>
                         </FormItem>
                       )}
                     />

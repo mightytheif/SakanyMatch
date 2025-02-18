@@ -10,15 +10,16 @@ import Search from "@/pages/search";
 import Lifestyle from "@/pages/lifestyle";
 import Property from "@/pages/property";
 import AuthPage from "@/pages/auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/search" component={Search} />
-      <Route path="/lifestyle" component={Lifestyle} />
-      <Route path="/property/:id" component={Property} />
       <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/" component={Home} />
+      <ProtectedRoute path="/search" component={Search} />
+      <ProtectedRoute path="/lifestyle" component={Lifestyle} />
+      <ProtectedRoute path="/property/:id" component={Property} />
       <Route component={NotFound} />
     </Switch>
   );
