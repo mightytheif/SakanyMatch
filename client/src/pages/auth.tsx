@@ -16,21 +16,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const registerSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
-  email: z.string().email("Invalid email address"),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
   const { user, login, register } = useAuth();
+  const { toast } = useToast();
 
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -55,6 +57,71 @@ export default function AuthPage() {
     }
   }, [user, navigate]);
 
+  const handleLogin = async (data: z.infer<typeof loginSchema>) => {
+    try {
+      await login(data.email, data.password);
+    } catch (error: any) {
+      // Handle specific Firebase auth errors
+      const errorCode = error.code;
+      let errorMessage = "Login failed. Please try again.";
+
+      switch (errorCode) {
+        case 'auth/invalid-email':
+          errorMessage = "The email address is not valid.";
+          break;
+        case 'auth/user-disabled':
+          errorMessage = "This account has been disabled.";
+          break;
+        case 'auth/user-not-found':
+          errorMessage = "No account found with this email.";
+          break;
+        case 'auth/wrong-password':
+          errorMessage = "Incorrect password.";
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = "Invalid email or password.";
+          break;
+      }
+
+      toast({
+        title: "Authentication Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRegister = async (data: z.infer<typeof registerSchema>) => {
+    try {
+      await register(data.name, data.email, data.password);
+    } catch (error: any) {
+      // Handle specific Firebase auth errors
+      const errorCode = error.code;
+      let errorMessage = "Registration failed. Please try again.";
+
+      switch (errorCode) {
+        case 'auth/email-already-in-use':
+          errorMessage = "This email is already registered.";
+          break;
+        case 'auth/invalid-email':
+          errorMessage = "The email address is not valid.";
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = "Email/password accounts are not enabled.";
+          break;
+        case 'auth/weak-password':
+          errorMessage = "The password is too weak.";
+          break;
+      }
+
+      toast({
+        title: "Registration Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       <div className="flex-1 flex items-center justify-center p-4">
@@ -69,9 +136,7 @@ export default function AuthPage() {
               <TabsContent value="login">
                 <Form {...loginForm}>
                   <form
-                    onSubmit={loginForm.handleSubmit((data) =>
-                      login(data.email, data.password)
-                    )}
+                    onSubmit={loginForm.handleSubmit(handleLogin)}
                     className="space-y-4"
                   >
                     <FormField
@@ -110,9 +175,7 @@ export default function AuthPage() {
               <TabsContent value="register">
                 <Form {...registerForm}>
                   <form
-                    onSubmit={registerForm.handleSubmit((data) =>
-                      register(data.name, data.email, data.password)
-                    )}
+                    onSubmit={registerForm.handleSubmit(handleRegister)}
                     className="space-y-4"
                   >
                     <FormField
