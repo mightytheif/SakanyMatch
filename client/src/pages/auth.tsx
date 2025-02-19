@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -12,13 +12,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -29,18 +27,12 @@ const registerSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  isLandlord: z.boolean().default(false),
-});
-
-const resetPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
 });
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
-  const { user, login, register, resetPassword } = useAuth();
+  const { user, login, register } = useAuth();
   const { toast } = useToast();
-  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -56,14 +48,6 @@ export default function AuthPage() {
       name: "",
       email: "",
       password: "",
-      isLandlord: false,
-    },
-  });
-
-  const resetPasswordForm = useForm({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      email: "",
     },
   });
 
@@ -109,7 +93,7 @@ export default function AuthPage() {
 
   const handleRegister = async (data: z.infer<typeof registerSchema>) => {
     try {
-      await register(data.name, data.email, data.password, data.isLandlord);
+      await register(data.name, data.email, data.password);
     } catch (error: any) {
       // Handle specific Firebase auth errors
       const errorCode = error.code;
@@ -138,31 +122,6 @@ export default function AuthPage() {
     }
   };
 
-  const handleResetPassword = async (data: z.infer<typeof resetPasswordSchema>) => {
-    try {
-      await resetPassword(data.email);
-      setShowResetPassword(false); // Hide the reset form after success
-    } catch (error: any) {
-      const errorCode = error.code;
-      let errorMessage = "Password reset failed. Please try again.";
-
-      switch (errorCode) {
-        case 'auth/invalid-email':
-          errorMessage = "The email address is not valid.";
-          break;
-        case 'auth/user-not-found':
-          errorMessage = "No account found with this email.";
-          break;
-      }
-
-      toast({
-        title: "Reset Password Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen flex">
       <div className="flex-1 flex items-center justify-center p-4">
@@ -175,84 +134,42 @@ export default function AuthPage() {
               </TabsList>
 
               <TabsContent value="login">
-                {!showResetPassword ? (
-                  <Form {...loginForm}>
-                    <form
-                      onSubmit={loginForm.handleSubmit(handleLogin)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={loginForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button type="submit" className="w-full">
-                        Login
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="w-full"
-                        onClick={() => setShowResetPassword(true)}
-                      >
-                        Forgot Password?
-                      </Button>
-                    </form>
-                  </Form>
-                ) : (
-                  <Form {...resetPasswordForm}>
-                    <form
-                      onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={resetPasswordForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button type="submit" className="w-full">
-                        Reset Password
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="w-full"
-                        onClick={() => setShowResetPassword(false)}
-                      >
-                        Back to Login
-                      </Button>
-                    </form>
-                  </Form>
-                )}
+                <Form {...loginForm}>
+                  <form
+                    onSubmit={loginForm.handleSubmit(handleLogin)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={loginForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full">
+                      Login
+                    </Button>
+                  </form>
+                </Form>
               </TabsContent>
 
               <TabsContent value="register">
@@ -297,26 +214,6 @@ export default function AuthPage() {
                             <Input type="password" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="isLandlord"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Register as a Landlord</FormLabel>
-                            <FormDescription>
-                              Select this if you want to list properties on SAKANY
-                            </FormDescription>
-                          </div>
                         </FormItem>
                       )}
                     />

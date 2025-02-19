@@ -6,10 +6,6 @@ import {
   onAuthStateChanged,
   type User as FirebaseUser,
   updateProfile,
-  sendPasswordResetEmail,
-  deleteUser,
-  updatePhoneNumber,
-  PhoneAuthProvider,
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -20,10 +16,7 @@ type AuthContextType = {
   error: Error | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (name: string, email: string, password: string, isLandlord: boolean) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  deleteAccount: () => Promise<void>;
-  updateUserProfile: (data: { displayName?: string, phoneNumber?: string }) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -51,123 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Successfully logged in",
       });
     } catch (error: any) {
-      let errorMessage = "Login failed. Please try again.";
-
-      // Enhanced error messages
-      switch (error.code) {
-        case 'auth/invalid-email':
-          errorMessage = "Please enter a valid email address";
-          break;
-        case 'auth/user-disabled':
-          errorMessage = "This account has been disabled";
-          break;
-        case 'auth/user-not-found':
-          errorMessage = "No account found with this email";
-          break;
-        case 'auth/wrong-password':
-          errorMessage = "Incorrect password";
-          break;
-        case 'auth/invalid-credential':
-          errorMessage = "Invalid email or password";
-          break;
-      }
-
       toast({
-        title: "Login Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const register = async (name: string, email: string, password: string, isLandlord: boolean) => {
-    try {
-      const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(user, { 
-        displayName: name,
-        photoURL: isLandlord ? 'landlord' : 'user' 
-      });
-      toast({
-        title: "Welcome to SAKANY!",
-        description: "Your account has been created successfully",
-      });
-    } catch (error: any) {
-      let errorMessage = "Registration failed. Please try again.";
-
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = "This email is already registered";
-          break;
-        case 'auth/invalid-email':
-          errorMessage = "Please enter a valid email address";
-          break;
-        case 'auth/operation-not-allowed':
-          errorMessage = "Email/password accounts are not enabled";
-          break;
-        case 'auth/weak-password':
-          errorMessage = "Password should be at least 6 characters";
-          break;
-      }
-
-      toast({
-        title: "Registration Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast({
-        title: "Reset Email Sent",
-        description: "Check your email for password reset instructions",
-      });
-    } catch (error: any) {
-      let errorMessage = "Password reset failed. Please try again.";
-
-      switch (error.code) {
-        case 'auth/invalid-email':
-          errorMessage = "Please enter a valid email address";
-          break;
-        case 'auth/user-not-found':
-          errorMessage = "No account found with this email";
-          break;
-      }
-
-      toast({
-        title: "Reset Password Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const updateUserProfile = async (data: { displayName?: string, phoneNumber?: string }) => {
-    try {
-      if (!user) throw new Error("No user logged in");
-
-      if (data.displayName) {
-        await updateProfile(user, { displayName: data.displayName });
-      }
-
-      // Note: Phone number updates require additional verification in Firebase
-      // This is just updating the profile display
-      if (data.phoneNumber) {
-        await updateProfile(user, { photoURL: data.phoneNumber });
-      }
-
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Update Failed",
+        title: "Login failed",
         description: error.message,
         variant: "destructive",
       });
@@ -175,17 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteAccount = async () => {
+  const register = async (name: string, email: string, password: string) => {
     try {
-      if (!user) throw new Error("No user logged in");
-      await deleteUser(user);
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(user, { displayName: name });
       toast({
-        title: "Account Deleted",
-        description: "Your account has been permanently deleted",
+        title: "Welcome to SAKANY!",
+        description: "Your account has been created successfully",
       });
     } catch (error: any) {
       toast({
-        title: "Delete Failed",
+        title: "Registration failed",
         description: error.message,
         variant: "destructive",
       });
@@ -219,9 +97,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
-        resetPassword,
-        deleteAccount,
-        updateUserProfile,
       }}
     >
       {children}

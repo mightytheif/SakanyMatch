@@ -80,10 +80,7 @@ export class MemStorage implements IStorage {
         area: 1200,
         type: "apartment",
         features: ["parking", "gym", "pool"],
-        images: [
-          "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=500&auto=format",
-          "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=500&auto=format"
-        ],
+        images: ["https://placehold.co/600x400"],
         userId: 1
       },
       {
@@ -96,10 +93,7 @@ export class MemStorage implements IStorage {
         area: 2500,
         type: "house",
         features: ["garage", "garden", "fireplace"],
-        images: [
-          "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=500&auto=format",
-          "https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=500&auto=format"
-        ],
+        images: ["https://placehold.co/600x400"],
         userId: 1
       }
     ];
