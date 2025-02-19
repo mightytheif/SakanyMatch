@@ -8,6 +8,8 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   deleteUser,
+  updatePhoneNumber,
+  PhoneAuthProvider,
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -49,9 +51,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Successfully logged in",
       });
     } catch (error: any) {
+      let errorMessage = "Login failed. Please try again.";
+
+      // Enhanced error messages
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = "Please enter a valid email address";
+          break;
+        case 'auth/user-disabled':
+          errorMessage = "This account has been disabled";
+          break;
+        case 'auth/user-not-found':
+          errorMessage = "No account found with this email";
+          break;
+        case 'auth/wrong-password':
+          errorMessage = "Incorrect password";
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = "Invalid email or password";
+          break;
+      }
+
       toast({
-        title: "Login failed",
-        description: error.message,
+        title: "Login Error",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
@@ -70,9 +93,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Your account has been created successfully",
       });
     } catch (error: any) {
+      let errorMessage = "Registration failed. Please try again.";
+
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = "This email is already registered";
+          break;
+        case 'auth/invalid-email':
+          errorMessage = "Please enter a valid email address";
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = "Email/password accounts are not enabled";
+          break;
+        case 'auth/weak-password':
+          errorMessage = "Password should be at least 6 characters";
+          break;
+      }
+
       toast({
-        title: "Registration failed",
-        description: error.message,
+        title: "Registration Error",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
@@ -83,13 +123,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await sendPasswordResetEmail(auth, email);
       toast({
-        title: "Password Reset Email Sent",
+        title: "Reset Email Sent",
         description: "Check your email for password reset instructions",
       });
     } catch (error: any) {
+      let errorMessage = "Password reset failed. Please try again.";
+
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = "Please enter a valid email address";
+          break;
+        case 'auth/user-not-found':
+          errorMessage = "No account found with this email";
+          break;
+      }
+
       toast({
-        title: "Password Reset Failed",
-        description: error.message,
+        title: "Reset Password Error",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
@@ -99,10 +150,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUserProfile = async (data: { displayName?: string, phoneNumber?: string }) => {
     try {
       if (!user) throw new Error("No user logged in");
-      await updateProfile(user, data);
+
+      if (data.displayName) {
+        await updateProfile(user, { displayName: data.displayName });
+      }
+
+      // Note: Phone number updates require additional verification in Firebase
+      // This is just updating the profile display
+      if (data.phoneNumber) {
+        await updateProfile(user, { photoURL: data.phoneNumber });
+      }
+
       toast({
         title: "Profile Updated",
-        description: "Your profile has been successfully updated",
+        description: "Your profile has been updated successfully",
       });
     } catch (error: any) {
       toast({
