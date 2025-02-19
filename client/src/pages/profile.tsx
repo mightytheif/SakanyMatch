@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -26,8 +26,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const profileSchema = z.object({
@@ -39,8 +37,24 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const { user, updateUserProfile, deleteAccount } = useAuth();
   const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Extract the actual name without the user type suffix
+  const displayName = user?.displayName?.split("|")[0] || "";
+  const userType = user?.displayName?.split("|")[1] || "user";
+
+  const form = useForm({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: displayName,
+      email: user?.email || "",
+      currentPassword: "",
+      newPassword: "",
+    },
+  });
 
   useEffect(() => {
     if (!user) {
@@ -48,57 +62,60 @@ export default function ProfilePage() {
     }
   }, [user, navigate]);
 
-  const form = useForm({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: user?.name || "",
-      email: user?.email || "",
-      currentPassword: "",
-      newPassword: "",
-    },
-  });
+  const handleProfileUpdate = async (data: z.infer<typeof profileSchema>) => {
+    try {
+      setIsUpdating(true);
+      const updates: { displayName?: string; email?: string; password?: string } = {};
 
-  const updateProfileMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof profileSchema>) => {
-      const res = await apiRequest("PATCH", "/api/user/profile", data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
-      });
-    },
-    onError: (error: Error) => {
+      if (data.name !== displayName) {
+        updates.displayName = data.name;
+      }
+
+      if (data.email !== user?.email) {
+        updates.email = data.email;
+      }
+
+      if (data.newPassword) {
+        updates.password = data.newPassword;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await updateUserProfile(updates);
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been updated successfully.",
+        });
+
+        // Clear password fields
+        form.setValue("currentPassword", "");
+        form.setValue("newPassword", "");
+      }
+    } catch (error: any) {
       toast({
         title: "Update failed",
         description: error.message,
         variant: "destructive",
       });
-    },
-  });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
-  const deleteAccountMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("DELETE", "/api/user/profile");
-    },
-    onSuccess: () => {
-      logoutMutation.mutate();
+  const handleDeleteAccount = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteAccount();
       navigate("/auth");
-      toast({
-        title: "Account Deleted",
-        description: "Your account has been deleted successfully.",
-      });
-    },
-    onError: (error: Error) => {
+    } catch (error: any) {
       toast({
         title: "Delete failed",
         description: error.message,
         variant: "destructive",
       });
-    },
-  });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -110,7 +127,7 @@ export default function ProfilePage() {
           <CardContent>
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))}
+                onSubmit={form.handleSubmit(handleProfileUpdate)}
                 className="space-y-4"
               >
                 <FormField
@@ -169,9 +186,9 @@ export default function ProfilePage() {
                 <div className="flex justify-between items-center pt-4">
                   <Button
                     type="submit"
-                    disabled={updateProfileMutation.isPending}
+                    disabled={isUpdating}
                   >
-                    {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                    {isUpdating ? "Saving..." : "Save Changes"}
                   </Button>
 
                   <AlertDialog>
@@ -189,10 +206,11 @@ export default function ProfilePage() {
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => deleteAccountMutation.mutate()}
+                          onClick={handleDeleteAccount}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          disabled={isDeleting}
                         >
-                          {deleteAccountMutation.isPending ? "Deleting..." : "Delete Account"}
+                          {isDeleting ? "Deleting..." : "Delete Account"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -208,7 +226,7 @@ export default function ProfilePage() {
             <CardTitle>Account Type</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>You are registered as a {user?.isLandlord ? "Landlord" : "Regular User"}</p>
+            <p>You are registered as a {userType === 'landlord' ? "Landlord" : "Regular User"}</p>
           </CardContent>
         </Card>
       </div>

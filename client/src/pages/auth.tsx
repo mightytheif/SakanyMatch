@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -27,11 +28,12 @@ const registerSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  isLandlord: z.boolean().default(false),
 });
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
-  const { user, login, register } = useAuth();
+  const { user, login, register, resetPassword } = useAuth();
   const { toast } = useToast();
 
   const loginForm = useForm({
@@ -48,6 +50,7 @@ export default function AuthPage() {
       name: "",
       email: "",
       password: "",
+      isLandlord: false,
     },
   });
 
@@ -93,7 +96,7 @@ export default function AuthPage() {
 
   const handleRegister = async (data: z.infer<typeof registerSchema>) => {
     try {
-      await register(data.name, data.email, data.password);
+      await register(data.name, data.email, data.password, data.isLandlord);
     } catch (error: any) {
       // Handle specific Firebase auth errors
       const errorCode = error.code;
@@ -117,6 +120,32 @@ export default function AuthPage() {
       toast({
         title: "Registration Error",
         description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    const email = loginForm.getValues("email");
+    if (!email) {
+      toast({
+        title: "Error",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await resetPassword(email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for instructions to reset your password",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     }
@@ -165,9 +194,19 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full">
-                      Login
-                    </Button>
+                    <div className="flex justify-between items-center">
+                      <Button type="submit" className="w-[48%]">
+                        Login
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-[48%]"
+                        onClick={handleForgotPassword}
+                      >
+                        Forgot Password?
+                      </Button>
+                    </div>
                   </form>
                 </Form>
               </TabsContent>
@@ -214,6 +253,25 @@ export default function AuthPage() {
                             <Input type="password" {...field} />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="isLandlord"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              I am a landlord
+                            </FormLabel>
+                          </div>
                         </FormItem>
                       )}
                     />
