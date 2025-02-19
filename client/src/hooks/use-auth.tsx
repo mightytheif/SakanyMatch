@@ -18,7 +18,7 @@ type AuthContextType = {
   error: Error | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, isLandlord: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   updateUserProfile: (data: { displayName?: string, phoneNumber?: string }) => Promise<void>;
@@ -58,10 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, isLandlord: boolean) => {
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(user, { displayName: name });
+      await updateProfile(user, { 
+        displayName: name,
+        photoURL: isLandlord ? 'landlord' : 'user' 
+      });
       toast({
         title: "Welcome to SAKANY!",
         description: "Your account has been created successfully",

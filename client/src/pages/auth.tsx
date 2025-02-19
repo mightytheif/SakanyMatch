@@ -12,11 +12,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -27,6 +29,7 @@ const registerSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  isLandlord: z.boolean().default(false),
 });
 
 const resetPasswordSchema = z.object({
@@ -53,6 +56,7 @@ export default function AuthPage() {
       name: "",
       email: "",
       password: "",
+      isLandlord: false,
     },
   });
 
@@ -105,7 +109,7 @@ export default function AuthPage() {
 
   const handleRegister = async (data: z.infer<typeof registerSchema>) => {
     try {
-      await register(data.name, data.email, data.password);
+      await register(data.name, data.email, data.password, data.isLandlord);
     } catch (error: any) {
       // Handle specific Firebase auth errors
       const errorCode = error.code;
@@ -293,6 +297,26 @@ export default function AuthPage() {
                             <Input type="password" {...field} />
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="isLandlord"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Register as a Landlord</FormLabel>
+                            <FormDescription>
+                              Select this if you want to list properties on SAKANY
+                            </FormDescription>
+                          </div>
                         </FormItem>
                       )}
                     />
