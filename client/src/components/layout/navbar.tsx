@@ -22,11 +22,11 @@ export function Navbar() {
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <a className="flex items-center gap-2">
-            <img src="/SAKANY_LOGO.png" alt="SAKANY" className="h-8" />
-          </a>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/">
+            <img src="/SAKANY_LOGO.png" alt="SAKANY" className="h-8 cursor-pointer" />
+          </Link>
+        </div>
 
         <NavigationMenu>
           <NavigationMenuList>
@@ -46,16 +46,14 @@ export function Navbar() {
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <Link href="/messages">
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      Messages
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
               </>
-            )}
-            {user && (
-              <NavigationMenuItem>
-                <Link href="/messages">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Messages
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
             )}
           </NavigationMenuList>
         </NavigationMenu>
@@ -73,17 +71,17 @@ export function Navbar() {
                   <DropdownMenuItem disabled>
                     Signed in as {user.displayName}
                   </DropdownMenuItem>
-                  <Link href="/profile">
-                    <DropdownMenuItem>
-                      Profile Settings
-                    </DropdownMenuItem>
-                  </Link>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">Profile Settings</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => logout()}>
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button>List Property</Button>
+              {user.photoURL === 'landlord' && (
+                <Button>List Property</Button>
+              )}
             </>
           ) : (
             <>
