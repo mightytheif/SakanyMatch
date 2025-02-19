@@ -6,6 +6,8 @@ import {
   onAuthStateChanged,
   type User as FirebaseUser,
   updateProfile,
+  sendPasswordResetEmail,
+  deleteUser,
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +19,8 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -71,6 +75,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for password reset instructions",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Password Reset Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      if (!user) throw new Error("No user logged in");
+      await deleteUser(user);
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -97,6 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        resetPassword,
+        deleteAccount,
       }}
     >
       {children}
