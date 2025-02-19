@@ -8,6 +8,11 @@ import { setupAuth } from "./auth";
 import { setupWebSocket } from "./websocket";
 
 export async function registerRoutes(app: Express) {
+  // Health check endpoint
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "OK" });
+  });
+
   // Set up authentication routes
   setupAuth(app);
 
