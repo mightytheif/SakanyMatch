@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -28,13 +28,22 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const profileSchema = z.object({
-  name: z.string().min(3, "Full name must be at least 3 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  displayName: z.string().min(3, "Full name must be at least 3 characters"),
+  phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
 });
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
-  const { user, deleteAccount } = useAuth();
+  const { user, deleteAccount, updateUserProfile } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+
+  const form = useForm({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      displayName: user?.displayName || "",
+      phoneNumber: user?.phoneNumber || "",
+    },
+  });
 
   useEffect(() => {
     if (!user) {
@@ -42,13 +51,14 @@ export default function ProfilePage() {
     }
   }, [user, navigate]);
 
-  const form = useForm({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: user?.displayName || "",
-      email: user?.email || "",
-    },
-  });
+  const onSubmit = async (data: z.infer<typeof profileSchema>) => {
+    try {
+      await updateUserProfile(data);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     try {
@@ -70,33 +80,56 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="displayName"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled />
+                        <Input {...field} disabled={!isEditing} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Phone Number</FormLabel>
                       <FormControl>
-                        <Input type="email" {...field} disabled />
+                        <Input {...field} disabled={!isEditing} type="tel" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                <div className="flex gap-4">
+                  {isEditing ? (
+                    <>
+                      <Button type="submit">Save Changes</Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsEditing(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      type="button" 
+                      onClick={() => setIsEditing(true)}
+                    >
+                      Edit Profile
+                    </Button>
+                  )}
+                </div>
               </form>
             </Form>
 

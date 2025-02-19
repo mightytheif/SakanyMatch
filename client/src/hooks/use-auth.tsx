@@ -21,6 +21,7 @@ type AuthContextType = {
   register: (name: string, email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  updateUserProfile: (data: { displayName?: string, phoneNumber?: string }) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -92,6 +93,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUserProfile = async (data: { displayName?: string, phoneNumber?: string }) => {
+    try {
+      if (!user) throw new Error("No user logged in");
+      await updateProfile(user, data);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const deleteAccount = async () => {
     try {
       if (!user) throw new Error("No user logged in");
@@ -138,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         resetPassword,
         deleteAccount,
+        updateUserProfile,
       }}
     >
       {children}
