@@ -11,12 +11,22 @@ interface PropertyCardProps {
 
 export function PropertyCard({ property, onClick }: PropertyCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Placeholder image URL with branded design
-  const placeholderImage = "https://placehold.co/600x400/FF9F40/FFFFFF?text=SAKANY";
+  const placeholderImage = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=500&auto=format";
 
   // Get the first image or use placeholder
   const imageUrl = (!imageError && property.images?.[0]) || placeholderImage;
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setIsLoading(false);
+  };
 
   return (
     <Card 
@@ -26,11 +36,19 @@ export function PropertyCard({ property, onClick }: PropertyCardProps) {
       <div className="relative w-full">
         <AspectRatio ratio={16/9} className="bg-muted">
           <div className="absolute inset-0 overflow-hidden">
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                <div className="animate-pulse bg-primary/10 w-full h-full" />
+              </div>
+            )}
             <img
               src={imageUrl}
               alt={property.title}
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-              onError={() => setImageError(true)}
+              className={`w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 ${
+                isLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              onError={handleImageError}
+              onLoad={handleImageLoad}
               loading="lazy"
             />
           </div>
