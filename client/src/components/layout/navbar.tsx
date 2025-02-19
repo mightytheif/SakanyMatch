@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -18,6 +18,7 @@ import { User } from "lucide-react";
 
 export function Navbar() {
   const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
 
   return (
     <header className="border-b">
@@ -37,28 +38,25 @@ export function Navbar() {
             {user && (
               <>
                 <NavigationMenuItem>
-                  <NavigationMenuLink
-                    className={navigationMenuTriggerStyle()}
-                    onClick={() => window.location.href = '/search'}
-                  >
-                    Search
-                  </NavigationMenuLink>
+                  <Link href="/search">
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      Search
+                    </NavigationMenuLink>
+                  </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuLink
-                    className={navigationMenuTriggerStyle()}
-                    onClick={() => window.location.href = '/lifestyle'}
-                  >
-                    Lifestyle Match
-                  </NavigationMenuLink>
+                  <Link href="/lifestyle">
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      Lifestyle Match
+                    </NavigationMenuLink>
+                  </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuLink
-                    className={navigationMenuTriggerStyle()}
-                    onClick={() => window.location.href = '/messages'}
-                  >
-                    Messages
-                  </NavigationMenuLink>
+                  <Link href="/messages">
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      Messages
+                    </NavigationMenuLink>
+                  </Link>
                 </NavigationMenuItem>
               </>
             )}
@@ -78,7 +76,7 @@ export function Navbar() {
                   <DropdownMenuItem disabled>
                     Signed in as {user.displayName}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
+                  <DropdownMenuItem onClick={() => setLocation('/profile')}>
                     Profile Settings
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => logout()}>
@@ -87,19 +85,19 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
               {user.photoURL === 'landlord' && (
-                <Button onClick={() => window.location.href = '/property/new'}>
+                <Button onClick={() => setLocation('/property/new')}>
                   List Property
                 </Button>
               )}
             </>
           ) : (
             <>
-              <Button variant="ghost" onClick={() => window.location.href = '/auth'}>
-                Sign In
-              </Button>
-              <Button onClick={() => window.location.href = '/auth'}>
-                Register
-              </Button>
+              <Link href="/auth">
+                <Button variant="ghost">Sign In</Button>
+              </Link>
+              <Link href="/auth">
+                <Button>Register</Button>
+              </Link>
             </>
           )}
         </div>
