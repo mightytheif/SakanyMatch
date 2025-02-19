@@ -24,7 +24,11 @@ export function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/">
-            <img src="/SAKANY_LOGO.png" alt="SAKANY" className="h-8 cursor-pointer" />
+            <img 
+              src="/SAKANY_LOGO.png" 
+              alt="SAKANY" 
+              className="h-8 cursor-pointer" 
+            />
           </Link>
         </div>
 
@@ -33,25 +37,28 @@ export function Navbar() {
             {user && (
               <>
                 <NavigationMenuItem>
-                  <Link href="/search">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                      Search
-                    </NavigationMenuLink>
-                  </Link>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle()}
+                    onClick={() => window.location.href = '/search'}
+                  >
+                    Search
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <Link href="/lifestyle">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                      Lifestyle Match
-                    </NavigationMenuLink>
-                  </Link>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle()}
+                    onClick={() => window.location.href = '/lifestyle'}
+                  >
+                    Lifestyle Match
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <Link href="/messages">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                      Messages
-                    </NavigationMenuLink>
-                  </Link>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle()}
+                    onClick={() => window.location.href = '/messages'}
+                  >
+                    Messages
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
               </>
             )}
@@ -71,8 +78,8 @@ export function Navbar() {
                   <DropdownMenuItem disabled>
                     Signed in as {user.displayName}
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile">Profile Settings</Link>
+                  <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
+                    Profile Settings
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => logout()}>
                     Sign Out
@@ -80,17 +87,19 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
               {user.photoURL === 'landlord' && (
-                <Button>List Property</Button>
+                <Button onClick={() => window.location.href = '/property/new'}>
+                  List Property
+                </Button>
               )}
             </>
           ) : (
             <>
-              <Link href="/auth">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link href="/auth">
-                <Button>Register</Button>
-              </Link>
+              <Button variant="ghost" onClick={() => window.location.href = '/auth'}>
+                Sign In
+              </Button>
+              <Button onClick={() => window.location.href = '/auth'}>
+                Register
+              </Button>
             </>
           )}
         </div>
