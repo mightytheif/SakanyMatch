@@ -24,19 +24,26 @@ type AuthContextType = {
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (data: { displayName?: string; email?: string; password?: string }) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  isAdmin: boolean;
+  loginAsAdmin: (email: string, password: string) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
+
+// Admin emails list - in a real app, this would be in a secure environment variable
+const ADMIN_EMAILS = ['admin@sakany.com'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      setIsAdmin(user ? ADMIN_EMAILS.includes(user.email!) : false);
       setIsLoading(false);
     });
 
@@ -53,6 +60,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       toast({
         title: "Login failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const loginAsAdmin = async (email: string, password: string) => {
+    try {
+      if (!ADMIN_EMAILS.includes(email)) {
+        throw new Error("This email is not authorized as admin");
+      }
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: "Welcome Admin!",
+        description: "Successfully logged in as administrator",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Admin Login Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -196,6 +223,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resetPassword,
         updateUserProfile,
         deleteAccount,
+        isAdmin,
+        loginAsAdmin,
       }}
     >
       {children}

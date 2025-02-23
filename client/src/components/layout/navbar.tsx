@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { User } from "lucide-react";
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
 
   return (
     <header className="border-b">
@@ -54,6 +54,15 @@ export function Navbar() {
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
+                {isAdmin && (
+                  <NavigationMenuItem>
+                    <Link href="/admin/dashboard">
+                      <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                        Admin Dashboard
+                      </NavigationMenuLink>
+                    </Link>
+                  </NavigationMenuItem>
+                )}
               </>
             )}
             {user && (
@@ -80,6 +89,7 @@ export function Navbar() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem disabled>
                     Signed in as {user.displayName?.split('|')[0]}
+                    {isAdmin && " (Admin)"}
                   </DropdownMenuItem>
                   <Link href="/profile">
                     <DropdownMenuItem>
@@ -91,7 +101,9 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button>List Property</Button>
+              {user.displayName?.split('|')[1] === 'landlord' && (
+                <Button>List Property</Button>
+              )}
             </>
           ) : (
             <>

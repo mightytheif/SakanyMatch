@@ -22,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  isAdmin: z.boolean().default(false),
 });
 
 const registerSchema = z.object({
@@ -41,6 +42,7 @@ export default function AuthPage() {
     defaultValues: {
       email: "",
       password: "",
+      isAdmin: false,
     },
   });
 
@@ -62,9 +64,8 @@ export default function AuthPage() {
 
   const handleLogin = async (data: z.infer<typeof loginSchema>) => {
     try {
-      await login(data.email, data.password);
+      await (data.isAdmin ? loginAsAdmin(data.email, data.password) : login(data.email, data.password));
     } catch (error: any) {
-      // Handle specific Firebase auth errors
       const errorCode = error.code;
       let errorMessage = "Login failed. Please try again.";
 
@@ -98,7 +99,6 @@ export default function AuthPage() {
     try {
       await register(data.name, data.email, data.password, data.isLandlord);
     } catch (error: any) {
-      // Handle specific Firebase auth errors
       const errorCode = error.code;
       let errorMessage = "Registration failed. Please try again.";
 
@@ -151,6 +151,17 @@ export default function AuthPage() {
     }
   };
 
+  const loginAsAdmin = async (email: string, password: string) => {
+    // Implement admin login logic here.  This will likely involve a different authentication method or checking against a specific admin role in your database.
+    // For this example, we'll simulate a successful admin login.  Replace with your actual implementation.
+    console.log("Admin login attempted:", email);
+    //Simulate success
+    //In a real application, replace this with actual admin authentication logic.
+    await login(email, password);
+
+  };
+
+
   return (
     <div className="min-h-screen flex">
       <div className="flex-1 flex items-center justify-center p-4">
@@ -194,13 +205,32 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={loginForm.control}
+                      name="isAdmin"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Login as Administrator
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
                     <div className="flex justify-between items-center">
                       <Button type="submit" className="w-[48%]">
                         Login
                       </Button>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                      <Button
+                        type="button"
+                        variant="outline"
                         className="w-[48%]"
                         onClick={handleForgotPassword}
                       >
@@ -288,13 +318,13 @@ export default function AuthPage() {
 
       <div className="hidden lg:flex flex-1 bg-orange-50 items-center justify-center p-12">
         <div className="max-w-lg">
-          <img 
-            src="/assets/logo.png" 
-            alt="SAKANY" 
+          <img
+            src="/assets/logo.png"
+            alt="SAKANY"
             className="h-16 w-auto mb-8"
             onError={(e) => {
-              e.currentTarget.src = '/assets/fallback-logo.svg';
-              console.error('Error loading logo image');
+              e.currentTarget.src = "/assets/fallback-logo.svg";
+              console.error("Error loading logo image");
             }}
           />
           <h1 className="text-4xl font-bold mb-4">
