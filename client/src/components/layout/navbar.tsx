@@ -25,7 +25,7 @@ export function Navbar() {
         <Link href="/">
           <a className="flex items-center gap-2">
             <img 
-              src="/assets/logo.png" 
+              src="/assets/logo.svg" 
               alt="SAKANY Logo" 
               className="h-8"
               onError={(e) => {

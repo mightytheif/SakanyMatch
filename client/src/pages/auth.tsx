@@ -289,7 +289,7 @@ export default function AuthPage() {
       <div className="hidden lg:flex flex-1 bg-orange-50 items-center justify-center p-12">
         <div className="max-w-lg">
           <img 
-            src="/assets/logo.png" 
+            src="/assets/logo.svg" 
             alt="SAKANY" 
             className="h-12 mb-8"
             onError={(e) => {
