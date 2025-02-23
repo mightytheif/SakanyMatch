@@ -25,9 +25,9 @@ export function Navbar() {
         <Link href="/">
           <a className="flex items-center gap-2">
             <img 
-              src="/assets/logo.svg" 
+              src="/assets/logo.png" 
               alt="SAKANY Logo" 
-              className="h-8"
+              className="h-10 w-auto"
               onError={(e) => {
                 e.currentTarget.src = '/assets/fallback-logo.svg';
                 console.error('Error loading logo image');

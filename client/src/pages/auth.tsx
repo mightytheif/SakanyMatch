@@ -289,9 +289,9 @@ export default function AuthPage() {
       <div className="hidden lg:flex flex-1 bg-orange-50 items-center justify-center p-12">
         <div className="max-w-lg">
           <img 
-            src="/assets/logo.svg" 
+            src="/assets/logo.png" 
             alt="SAKANY" 
-            className="h-12 mb-8"
+            className="h-16 w-auto mb-8"
             onError={(e) => {
               e.currentTarget.src = '/assets/fallback-logo.svg';
               console.error('Error loading logo image');
