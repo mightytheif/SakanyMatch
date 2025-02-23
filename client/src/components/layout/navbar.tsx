@@ -24,7 +24,15 @@ export function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/">
           <a className="flex items-center gap-2">
-            <img src="/SAKANY_LOGO.png" alt="SAKANY" className="h-8" />
+            <img 
+              src="/assets/logo.png" 
+              alt="SAKANY Logo" 
+              className="h-8"
+              onError={(e) => {
+                e.currentTarget.src = '/assets/fallback-logo.svg';
+                console.error('Error loading logo image');
+              }}
+            />
           </a>
         </Link>
 
@@ -71,7 +79,7 @@ export function Navbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem disabled>
-                    Signed in as {user.displayName}
+                    Signed in as {user.displayName?.split('|')[0]}
                   </DropdownMenuItem>
                   <Link href="/profile">
                     <DropdownMenuItem>
