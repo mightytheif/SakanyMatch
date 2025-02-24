@@ -97,6 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         displayName: `${name}|${isLandlord ? 'landlord' : 'user'}${isAdminEmail ? '|admin' : ''}`
       });
 
+      // If it's an admin email, automatically log in as admin
+      if (isAdminEmail) {
+        await loginAsAdmin(email, password);
+      }
+
       toast({
         title: "Welcome to SAKANY!",
         description: "Your account has been created successfully",

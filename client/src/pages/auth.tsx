@@ -34,7 +34,7 @@ const registerSchema = z.object({
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
-  const { user, login, register, resetPassword, loginAsAdmin } = useAuth();
+  const { user, login, register, resetPassword } = useAuth();
   const { toast } = useToast();
 
   const loginForm = useForm({
@@ -107,13 +107,14 @@ export default function AuthPage() {
         return;
       }
 
-      // Register the user normally first
+      // Register the user
       await register(data.name, data.email, data.password, data.isLandlord);
 
-      // If it's an admin account, perform admin login
-      if (data.isAdmin) {
-        await loginAsAdmin(data.email, data.password);
-      }
+      toast({
+        title: "Success",
+        description: "Account created successfully",
+      });
+
     } catch (error: any) {
       const errorCode = error.code;
       let errorMessage = "Registration failed. Please try again.";
