@@ -159,11 +159,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const updates: Promise<void>[] = [];
 
       if (data.displayName) {
-        // Preserve the user type (landlord/user) when updating the display name
+        // Preserve the user type (landlord/user) and admin status when updating the display name
         const currentDisplayName = auth.currentUser.displayName || "";
-        const userType = currentDisplayName.split("|")[1] || "user";
+        const parts = currentDisplayName.split("|");
+        const userType = parts[1] || "user";
+        const isAdmin = parts.includes("admin");
         updates.push(updateProfile(auth.currentUser, {
-          displayName: `${data.displayName}|${userType}`
+          displayName: `${data.displayName}|${userType}${isAdmin ? '|admin' : ''}`
         }));
       }
 
