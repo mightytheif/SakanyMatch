@@ -30,8 +30,8 @@ type AuthContextType = {
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-// Check if email is from sakany.com domain
-const isAdminEmail = (email: string) => email.endsWith('@sakany.com');
+// Admin emails list - in a real app, this would be in a secure environment variable
+const ADMIN_EMAILS = ['admin@sakany.com'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -43,8 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      // Check if user has admin flag in displayName
-      setIsAdmin(user?.displayName?.includes('|admin') || false);
+      setIsAdmin(user ? ADMIN_EMAILS.includes(user.email!) : false);
       setIsLoading(false);
     });
 
@@ -70,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginAsAdmin = async (email: string, password: string) => {
     try {
-      if (!isAdminEmail(email)) {
+      if (!ADMIN_EMAILS.includes(email)) {
         throw new Error("This email is not authorized as admin");
       }
       await signInWithEmailAndPassword(auth, email, password);
@@ -92,22 +91,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Check if email is from sakany.com domain to set admin status
-      const shouldBeAdmin = isAdminEmail(email);
-      const userType = isLandlord ? 'landlord' : 'user';
-      const displayName = `${name}|${userType}${shouldBeAdmin ? '|admin' : ''}`;
+      // Store the isLandlord status and check if it's an admin email
+      const isAdminEmail = ADMIN_EMAILS.includes(email);
+      await updateProfile(user, {
+        displayName: `${name}|${isLandlord ? 'landlord' : 'user'}${isAdminEmail ? '|admin' : ''}`
+      });
 
-      await updateProfile(user, { displayName });
+      // If it's an admin email, automatically log in as admin
+      if (isAdminEmail) {
+        await loginAsAdmin(email, password);
+      }
 
       toast({
         title: "Welcome to SAKANY!",
         description: "Your account has been created successfully",
       });
-
-      // If it's an admin email, automatically log in as admin
-      if (shouldBeAdmin) {
-        await loginAsAdmin(email, password);
-      }
     } catch (error: any) {
       toast({
         title: "Registration failed",
