@@ -45,6 +45,7 @@ export default function ProfilePage() {
   // Extract the actual name without the user type suffix
   const displayName = user?.displayName?.split("|")[0] || "";
   const userType = user?.displayName?.split("|")[1] || "user";
+  const isAdmin = user?.displayName?.split("|").includes("admin") || false;
 
   const form = useForm({
     resolver: zodResolver(profileSchema),
@@ -226,7 +227,17 @@ export default function ProfilePage() {
             <CardTitle>Account Type</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>You are registered as a {userType === 'landlord' ? "Landlord" : "Regular User"}</p>
+            <div className="space-y-2">
+              <p>
+                You are registered as a {userType === 'landlord' ? "Landlord" : "Regular User"}
+                {isAdmin && " and have Administrator privileges"}
+              </p>
+              {isAdmin && (
+                <p className="text-sm text-muted-foreground">
+                  As an administrator, you have access to the admin dashboard where you can manage users and permissions.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
