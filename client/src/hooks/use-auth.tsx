@@ -90,15 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (name: string, email: string, password: string, isLandlord: boolean) => {
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(user, { 
-        displayName: name,
-      });
 
-      // Store the isLandlord status in the user's custom claims
-      // Note: This would typically be done through a backend Cloud Function
-      // For now, we'll store it in the displayName as "name|landlord" or "name|user"
+      // Store the isLandlord status and check if it's an admin email
+      const isAdminEmail = ADMIN_EMAILS.includes(email);
       await updateProfile(user, {
-        displayName: `${name}|${isLandlord ? 'landlord' : 'user'}`
+        displayName: `${name}|${isLandlord ? 'landlord' : 'user'}${isAdminEmail ? '|admin' : ''}`
       });
 
       toast({

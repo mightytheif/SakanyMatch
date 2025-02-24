@@ -97,11 +97,22 @@ export default function AuthPage() {
 
   const handleRegister = async (data: z.infer<typeof registerSchema>) => {
     try {
-      // If registering as admin, use loginAsAdmin instead
+      // If trying to register as admin, verify email first
+      if (data.isAdmin && !data.email.endsWith('@sakany.com')) {
+        toast({
+          title: "Registration Error",
+          description: "Admin accounts must use a @sakany.com email address",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Register the user normally first
+      await register(data.name, data.email, data.password, data.isLandlord);
+
+      // If it's an admin account, perform admin login
       if (data.isAdmin) {
         await loginAsAdmin(data.email, data.password);
-      } else {
-        await register(data.name, data.email, data.password, data.isLandlord);
       }
     } catch (error: any) {
       const errorCode = error.code;
