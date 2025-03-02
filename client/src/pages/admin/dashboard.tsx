@@ -22,7 +22,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc } from "firebase/firestore";
+import { getAuth, deleteUser } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 
@@ -96,6 +97,36 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      // Delete user from Firestore
+      const userRef = doc(db, "users", userId);
+
+      // Get the user document to check if it exists
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        throw new Error("User not found");
+      }
+
+      // Delete the user document
+      await deleteDoc(userRef);
+
+      // Update the local state
+      setUsers(users.filter(user => user.uid !== userId));
+
+      toast({
+        title: "Success",
+        description: "User has been deleted successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -103,7 +134,7 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
-      
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -146,6 +177,7 @@ export default function AdminDashboard() {
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
+                          onClick={() => handleDeleteUser(user.uid)}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Delete
