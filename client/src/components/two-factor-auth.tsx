@@ -70,21 +70,38 @@ export function TwoFactorAuth() {
       const multiFactorSession = await multiFactor(user).getSession();
       const phoneAuthProvider = new PhoneAuthProvider(auth);
 
-      const verificationId = await phoneAuthProvider.verifyPhoneNumber(
-        {
-          phoneNumber: formattedPhone,
-          session: multiFactorSession
-        },
-        recaptchaVerifier
-      );
+      try {
+        const verificationId = await phoneAuthProvider.verifyPhoneNumber(
+          {
+            phoneNumber: formattedPhone,
+            session: multiFactorSession
+          },
+          recaptchaVerifier
+        );
 
-      setVerificationId(verificationId);
-      setStep("verify");
+        setVerificationId(verificationId);
+        setStep("verify");
 
-      toast({
-        title: "Verification code sent",
-        description: "Please enter the code sent to your phone",
-      });
+        toast({
+          title: "Verification code sent",
+          description: "Please enter the code sent to your phone",
+        });
+      } catch (phoneError: any) {
+        console.error("Phone verification error:", phoneError);
+        let errorMessage = phoneError.message;
+
+        if (phoneError.code === 'auth/operation-not-allowed') {
+          errorMessage = "Phone authentication is not enabled. Please ensure it's enabled in the Firebase Console.";
+        } else if (phoneError.code === 'auth/invalid-phone-number') {
+          errorMessage = "Invalid phone number format. Please use format: 5XXXXXXXX";
+        }
+
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       console.error("2FA Error:", error);
       toast({
