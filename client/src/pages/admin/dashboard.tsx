@@ -22,10 +22,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc } from "firebase/firestore";
-import { getAuth, deleteUser } from "firebase/auth";
+import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface User {
   uid: string;
@@ -33,6 +33,7 @@ interface User {
   displayName: string;
   canListProperties: boolean;
   isLandlord: boolean;
+  createdAt?: string;
 }
 
 export default function AdminDashboard() {
@@ -50,17 +51,18 @@ export default function AdminDashboard() {
 
     const fetchUsers = async () => {
       try {
-        const usersCollection = collection(db, "users");
-        const snapshot = await getDocs(usersCollection);
+        const usersQuery = query(collection(db, "users"), orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(usersQuery);
         const userData = snapshot.docs.map(doc => ({
           uid: doc.id,
           ...doc.data()
         } as User));
         setUsers(userData);
-      } catch (error) {
+      } catch (error: any) {
+        console.error("Error fetching users:", error);
         toast({
           title: "Error",
-          description: "Failed to fetch users",
+          description: "Failed to fetch users: " + error.message,
           variant: "destructive",
         });
       } finally {
@@ -88,10 +90,11 @@ export default function AdminDashboard() {
         title: "Success",
         description: `Property listing permission ${!currentValue ? 'granted' : 'revoked'}`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error updating user permissions:", error);
       toast({
         title: "Error",
-        description: "Failed to update user permissions",
+        description: "Failed to update user permissions: " + error.message,
         variant: "destructive",
       });
     }
@@ -99,7 +102,6 @@ export default function AdminDashboard() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Delete user from Firestore
       const userRef = doc(db, "users", userId);
 
       // Get the user document to check if it exists
@@ -108,7 +110,7 @@ export default function AdminDashboard() {
         throw new Error("User not found");
       }
 
-      // Delete the user document
+      // Delete the user document from Firestore
       await deleteDoc(userRef);
 
       // Update the local state
@@ -119,16 +121,21 @@ export default function AdminDashboard() {
         description: "User has been deleted successfully",
       });
     } catch (error: any) {
+      console.error("Error deleting user:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete user",
+        description: "Failed to delete user: " + error.message,
         variant: "destructive",
       });
     }
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -149,10 +156,14 @@ export default function AdminDashboard() {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.uid}>
-                <TableCell>{user.displayName}</TableCell>
+                <TableCell>{user.displayName?.split('|')[0]}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  {user.isLandlord ? "Landlord" : "Regular User"}
+                  {user.displayName?.includes('admin') 
+                    ? "Administrator" 
+                    : user.isLandlord 
+                    ? "Landlord" 
+                    : "Regular User"}
                 </TableCell>
                 <TableCell>
                   <Switch

@@ -11,7 +11,8 @@ import {
   deleteUser,
   type User as FirebaseUser,
 } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -45,10 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
       // Check both email domain and displayName for admin status
       setIsAdmin(
-        user ? 
-        (user.email?.toLowerCase().endsWith('@sakany.com') || 
-         user.displayName?.split('|').includes('admin')) : 
-        false
+        user ?
+          (user.email?.toLowerCase().endsWith('@sakany.com') ||
+            user.displayName?.split('|').includes('admin')) :
+          false
       );
       setIsLoading(false);
     });
@@ -115,6 +116,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await updateProfile(user, {
         displayName: displayNameParts.join('|')
+      });
+
+      // Create user document in Firestore
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: email,
+        displayName: displayNameParts.join('|'),
+        isLandlord: isLandlord,
+        canListProperties: isLandlord,
+        createdAt: new Date().toISOString()
       });
 
       // If it's an admin account, log in as admin
