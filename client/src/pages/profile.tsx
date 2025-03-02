@@ -229,8 +229,7 @@ export default function ProfilePage() {
           <CardContent>
             <div className="space-y-2">
               <p>
-                You are registered as a {userType === 'landlord' ? "Landlord" : "Regular User"}
-                {isAdmin && " and have Administrator privileges"}
+                You are registered as {isAdmin ? "Administrator" : userType === 'landlord' ? "Landlord" : "Regular User"}
               </p>
               {isAdmin && (
                 <p className="text-sm text-muted-foreground">
