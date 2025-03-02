@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { TwoFactorAuth } from "@/components/two-factor-auth";
 
 const profileSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -120,7 +121,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Profile Settings</CardTitle>
@@ -222,7 +223,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="mt-6">
+        <Card>
           <CardHeader>
             <CardTitle>Account Type</CardTitle>
           </CardHeader>
@@ -239,6 +240,8 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        <TwoFactorAuth />
       </div>
     </div>
   );

@@ -10,6 +10,11 @@ import {
   updatePassword,
   deleteUser,
   type User as FirebaseUser,
+  multiFactor,
+  PhoneAuthProvider,
+  PhoneMultiFactorGenerator,
+  MultiFactorError,
+  getMultiFactorResolver,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
@@ -20,6 +25,7 @@ type AuthContextType = {
   isLoading: boolean;
   error: Error | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithMfaVerification: (verificationId: string, verificationCode: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string, isLandlord: boolean, isAdmin?: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -27,24 +33,23 @@ type AuthContextType = {
   deleteAccount: () => Promise<void>;
   isAdmin: boolean;
   loginAsAdmin: (email: string, password: string) => Promise<void>;
+  mfaResolver: any;
+  setMfaResolver: (resolver: any) => void;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
-
-// Admin emails list - in a real app, this would be in a secure environment variable
-const ADMIN_EMAILS = ['admin@sakany.com'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [mfaResolver, setMfaResolver] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      // Check both email domain and displayName for admin status
       setIsAdmin(
         user ?
           (user.email?.toLowerCase().endsWith('@sakany.com') ||
@@ -65,6 +70,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Successfully logged in",
       });
     } catch (error: any) {
+      // Handle MFA required error
+      if (error.code === 'auth/multi-factor-auth-required') {
+        const resolver = getMultiFactorResolver(auth, error);
+        setMfaResolver(resolver);
+
+        // Send verification code
+        const phoneAuthProvider = new PhoneAuthProvider(auth);
+        const verificationId = await phoneAuthProvider.verifyPhoneNumber(
+          resolver.hints[0],
+          resolver.session
+        );
+
+        toast({
+          title: "2FA Required",
+          description: "Please enter the verification code sent to your phone",
+        });
+
+        return; // Indicate MFA is required
+      }
+
       toast({
         title: "Login failed",
         description: error.message,
@@ -74,19 +99,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginAsAdmin = async (email: string, password: string) => {
+  const loginWithMfaVerification = async (verificationId: string, verificationCode: string) => {
+    if (!mfaResolver) return;
+
     try {
-      if (!email.toLowerCase().endsWith('@sakany.com')) {
-        throw new Error("This email is not authorized as admin");
-      }
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
+      const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+      await mfaResolver.resolveSignIn(multiFactorAssertion);
+
+      setMfaResolver(null);
+
       toast({
-        title: "Welcome Admin!",
-        description: "Successfully logged in as administrator",
+        title: "Welcome back!",
+        description: "Successfully logged in",
       });
     } catch (error: any) {
       toast({
-        title: "Admin Login Failed",
+        title: "Verification failed",
         description: error.message,
         variant: "destructive",
       });
@@ -246,6 +275,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginAsAdmin = async (email: string, password: string) => {
+    try {
+      if (!email.toLowerCase().endsWith('@sakany.com')) {
+        throw new Error("This email is not authorized as admin");
+      }
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: "Welcome Admin!",
+        description: "Successfully logged in as administrator",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Admin Login Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -253,6 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         error,
         login,
+        loginWithMfaVerification,
         register,
         logout,
         resetPassword,
@@ -260,6 +310,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         deleteAccount,
         isAdmin,
         loginAsAdmin,
+        mfaResolver,
+        setMfaResolver,
       }}
     >
       {children}
