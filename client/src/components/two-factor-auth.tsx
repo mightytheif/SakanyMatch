@@ -3,6 +3,7 @@ import {
   multiFactor,
   PhoneAuthProvider,
   PhoneMultiFactorGenerator,
+  RecaptchaVerifier,
 } from "firebase/auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -37,12 +38,27 @@ export function TwoFactorAuth() {
 
     try {
       setIsEnrolling(true);
-      const multiFactorSession = await multiFactor(user).getSession();
 
+      // Format phone number if needed
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+966${phoneNumber.replace(/^0+/, '')}`;
+
+      // Initialize RecaptchaVerifier
+      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved, allow signIn
+        }
+      });
+
+      const multiFactorSession = await multiFactor(user).getSession();
       const phoneAuthProvider = new PhoneAuthProvider(auth);
+
       const verificationId = await phoneAuthProvider.verifyPhoneNumber(
-        phoneNumber,
-        multiFactorSession
+        {
+          phoneNumber: formattedPhone,
+          session: multiFactorSession
+        },
+        recaptchaVerifier
       );
 
       setVerificationId(verificationId);
@@ -53,6 +69,7 @@ export function TwoFactorAuth() {
         description: "Please enter the code sent to your phone",
       });
     } catch (error: any) {
+      console.error("2FA Error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -82,6 +99,7 @@ export function TwoFactorAuth() {
       setPhoneNumber("");
       setVerificationCode("");
     } catch (error: any) {
+      console.error("2FA Error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -193,14 +211,15 @@ export function TwoFactorAuth() {
               <Label>Phone Number</Label>
               <Input
                 type="tel"
-                placeholder="+1234567890"
+                placeholder="5XXXXXXXX"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
               />
               <p className="text-sm text-muted-foreground">
-                Enter your phone number in international format (e.g., +1234567890)
+                Enter your Saudi phone number (e.g., 5XXXXXXXX). The number will automatically be formatted with +966.
               </p>
             </div>
+            <div id="recaptcha-container"></div>
             <Button
               onClick={startEnrollment}
               disabled={!phoneNumber || isEnrolling}
