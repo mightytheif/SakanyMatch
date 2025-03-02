@@ -12,6 +12,8 @@ import Property from "@/pages/property";
 import AuthPage from "@/pages/auth";
 import ProfilePage from "@/pages/profile";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { ProtectedAdminRoute } from "@/lib/protected-admin-route";
+import AdminDashboard from "@/pages/admin/dashboard";
 import Messages from "@/pages/messages";
 
 function Router() {
@@ -24,6 +26,7 @@ function Router() {
       <ProtectedRoute path="/property/:id" component={Property} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/messages" component={Messages} />
+      <ProtectedAdminRoute path="/admin/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
