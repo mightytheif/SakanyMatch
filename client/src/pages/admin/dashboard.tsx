@@ -25,7 +25,7 @@ import {
 import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 
 interface User {
   uid: string;
@@ -42,6 +42,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
 
     const fetchUsers = async () => {
       try {
+        setError(null);
         const usersQuery = query(collection(db, "users"), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(usersQuery);
         const userData = snapshot.docs.map(doc => ({
@@ -60,9 +62,16 @@ export default function AdminDashboard() {
         setUsers(userData);
       } catch (error: any) {
         console.error("Error fetching users:", error);
+        let errorMessage = "Failed to fetch users";
+
+        if (error.code === "permission-denied") {
+          errorMessage = "You don't have permission to access user data. Please verify your admin privileges and ensure Firestore rules are properly configured.";
+        }
+
+        setError(errorMessage);
         toast({
           title: "Error",
-          description: "Failed to fetch users: " + error.message,
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
@@ -92,9 +101,15 @@ export default function AdminDashboard() {
       });
     } catch (error: any) {
       console.error("Error updating user permissions:", error);
+      let errorMessage = "Failed to update user permissions";
+
+      if (error.code === "permission-denied") {
+        errorMessage = "You don't have permission to update user permissions. Please verify your admin privileges.";
+      }
+
       toast({
         title: "Error",
-        description: "Failed to update user permissions: " + error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -122,9 +137,15 @@ export default function AdminDashboard() {
       });
     } catch (error: any) {
       console.error("Error deleting user:", error);
+      let errorMessage = "Failed to delete user";
+
+      if (error.code === "permission-denied") {
+        errorMessage = "You don't have permission to delete users. Please verify your admin privileges.";
+      }
+
       toast({
         title: "Error",
-        description: "Failed to delete user: " + error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -134,6 +155,17 @@ export default function AdminDashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-2 p-4 rounded-md bg-destructive/10 text-destructive">
+          <AlertCircle className="h-5 w-5" />
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
