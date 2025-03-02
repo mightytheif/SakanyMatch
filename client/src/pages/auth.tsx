@@ -98,7 +98,7 @@ export default function AuthPage() {
   const handleRegister = async (data: z.infer<typeof registerSchema>) => {
     try {
       // If trying to register as admin, verify email first
-      if (data.isAdmin && !data.email.endsWith('@sakany.com')) {
+      if (data.isAdmin && !data.email.toLowerCase().endsWith('@sakany.com')) {
         toast({
           title: "Registration Error",
           description: "Admin accounts must use a @sakany.com email address",
@@ -108,7 +108,7 @@ export default function AuthPage() {
       }
 
       // Register the user
-      await register(data.name, data.email, data.password, data.isLandlord);
+      await register(data.name, data.email, data.password, data.isLandlord, data.isAdmin);
 
       toast({
         title: "Success",
@@ -139,6 +139,7 @@ export default function AuthPage() {
         description: errorMessage,
         variant: "destructive",
       });
+      throw error;
     }
   };
 

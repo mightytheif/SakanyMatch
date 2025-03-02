@@ -20,7 +20,7 @@ type AuthContextType = {
   error: Error | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (name: string, email: string, password: string, isLandlord: boolean) => Promise<void>;
+  register: (name: string, email: string, password: string, isLandlord: boolean, isAdmin?: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (data: { displayName?: string; email?: string; password?: string }) => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -87,20 +87,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string, isLandlord: boolean) => {
+  const register = async (name: string, email: string, password: string, isLandlord: boolean, isAdmin: boolean = false) => {
     try {
+      // Check if trying to register as admin with valid email
+      if (isAdmin && !email.toLowerCase().endsWith('@sakany.com')) {
+        throw new Error("Admin accounts must use a @sakany.com email address");
+      }
+
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Store the isLandlord status and check if it's an admin email
-      const isAdminEmail = ADMIN_EMAILS.includes(email);
-      await updateProfile(user, {
-        displayName: `${name}|${isLandlord ? 'landlord' : 'user'}${isAdminEmail ? '|admin' : ''}`
-      });
+      // Set display name with proper roles
+      const displayNameParts = [name];
 
-      // If it's an admin email, automatically log in as admin
-      if (isAdminEmail) {
-        await loginAsAdmin(email, password);
+      // Add user type (landlord/user)
+      displayNameParts.push(isLandlord ? 'landlord' : 'user');
+
+      // Add admin status if applicable
+      if (isAdmin || email.toLowerCase().endsWith('@sakany.com')) {
+        displayNameParts.push('admin');
       }
+
+      await updateProfile(user, {
+        displayName: displayNameParts.join('|')
+      });
 
       toast({
         title: "Welcome to SAKANY!",
