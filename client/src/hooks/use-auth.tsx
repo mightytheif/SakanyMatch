@@ -43,7 +43,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setIsAdmin(user ? ADMIN_EMAILS.includes(user.email!) : false);
+      // Check both email domain and displayName for admin status
+      setIsAdmin(
+        user ? 
+        (user.email?.toLowerCase().endsWith('@sakany.com') || 
+         user.displayName?.split('|').includes('admin')) : 
+        false
+      );
       setIsLoading(false);
     });
 
@@ -69,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginAsAdmin = async (email: string, password: string) => {
     try {
-      if (!ADMIN_EMAILS.includes(email)) {
+      if (!email.toLowerCase().endsWith('@sakany.com')) {
         throw new Error("This email is not authorized as admin");
       }
       await signInWithEmailAndPassword(auth, email, password);
@@ -110,6 +116,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await updateProfile(user, {
         displayName: displayNameParts.join('|')
       });
+
+      // If it's an admin account, log in as admin
+      if (isAdmin || email.toLowerCase().endsWith('@sakany.com')) {
+        await loginAsAdmin(email, password);
+      }
 
       toast({
         title: "Welcome to SAKANY!",
