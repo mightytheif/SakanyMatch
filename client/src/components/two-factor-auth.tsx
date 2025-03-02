@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   multiFactor,
   PhoneAuthProvider,
@@ -33,6 +33,17 @@ export function TwoFactorAuth() {
   const mfa = user ? multiFactor(user) : null;
   const isEnabled = mfa?.enrolledFactors?.length > 0;
 
+  // Cleanup function for recaptcha
+  useEffect(() => {
+    return () => {
+      // Clear any existing recaptcha when component unmounts
+      const recaptchaContainer = document.getElementById('recaptcha-container');
+      if (recaptchaContainer) {
+        recaptchaContainer.innerHTML = '';
+      }
+    };
+  }, []);
+
   const startEnrollment = async () => {
     if (!user || !phoneNumber) return;
 
@@ -41,6 +52,12 @@ export function TwoFactorAuth() {
 
       // Format phone number if needed
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+966${phoneNumber.replace(/^0+/, '')}`;
+
+      // Clear any existing recaptcha
+      const recaptchaContainer = document.getElementById('recaptcha-container');
+      if (recaptchaContainer) {
+        recaptchaContainer.innerHTML = '';
+      }
 
       // Initialize RecaptchaVerifier
       const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
