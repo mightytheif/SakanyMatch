@@ -18,18 +18,18 @@ export default function PropertyPage({ params: { id } }: { params: { id: string 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-bold mb-4">{property.title}</h1>
-          
+
           <div className="flex items-center gap-2 mb-6">
             <MapPin className="text-muted-foreground" />
             <span>{property.location}</span>
             <Badge variant="secondary" className="ml-auto">
-              ${property.price.toLocaleString()}
+              {property.price.toLocaleString()} SAR
             </Badge>
           </div>
 
           <div className="aspect-[16/9] mb-6 overflow-hidden rounded-lg">
             <img
-              src={property.images[0] || "https://placehold.co/1200x800"}
+              src={property.images?.[0] || "https://placehold.co/1200x800"}
               alt={property.title}
               className="w-full h-full object-cover"
             />
@@ -46,7 +46,7 @@ export default function PropertyPage({ params: { id } }: { params: { id: string 
                   <Bath /> {property.bathrooms} Bathrooms
                 </div>
                 <div className="flex items-center gap-2">
-                  <Square /> {property.area} sqft
+                  <Square /> {property.area} m²
                 </div>
               </div>
             </CardContent>

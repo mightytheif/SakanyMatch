@@ -33,7 +33,7 @@ const propertySchema = z.object({
   location: z.string().min(3, "Location must be at least 3 characters"),
   bedrooms: z.coerce.number().min(1, "Number of bedrooms must be at least 1"),
   bathrooms: z.coerce.number().min(1, "Number of bathrooms must be at least 1"),
-  area: z.coerce.number().min(1, "Area must be greater than 0"),
+  area: z.coerce.number().min(1, "Area must be greater than 0 square meters"),
   type: z.enum(["house", "apartment", "condo"]),
   images: z.array(z.string()).min(1, "At least one image is required"),
 });
@@ -184,9 +184,13 @@ export default function AddProperty() {
                 name="area"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Area (sqft)</FormLabel>
+                    <FormLabel>Area (m²)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        placeholder="Enter area in square meters"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -44,7 +44,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
           </div>
           <div className="flex items-center">
             <Square size={16} className="mr-1" />
-            <span>{property.area} sqft</span>
+            <span>{property.area} m²</span>
           </div>
         </div>
       </CardContent>
