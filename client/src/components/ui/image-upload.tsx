@@ -20,11 +20,22 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Only allow images
-    if (!file.type.startsWith("image/")) {
+    // Validate file type
+    const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!supportedTypes.includes(file.type)) {
       toast({
         title: "Invalid file type",
-        description: "Please upload an image file",
+        description: "Please upload a JPG, JPEG, PNG, or GIF image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image size should be less than 5MB",
         variant: "destructive",
       });
       return;
@@ -82,31 +93,37 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
           </div>
         ))}
       </div>
-      
-      <div className="flex items-center gap-4">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={isUploading}
-          onClick={() => document.getElementById("image-upload")?.click()}
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Uploading...
-            </>
-          ) : (
-            "Upload Image"
-          )}
-        </Button>
-        <input
-          id="image-upload"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleUpload}
-          disabled={isUploading}
-        />
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isUploading}
+            onClick={() => document.getElementById("image-upload")?.click()}
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Uploading...
+              </>
+            ) : (
+              "Upload Image"
+            )}
+          </Button>
+          <input
+            id="image-upload"
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/gif"
+            className="hidden"
+            onChange={handleUpload}
+            disabled={isUploading}
+          />
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Supported formats: JPG, JPEG, PNG, GIF. Maximum size: 5MB per image.
+          For best quality, use images at least 800x600 pixels.
+        </p>
       </div>
     </div>
   );
