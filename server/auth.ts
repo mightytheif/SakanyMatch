@@ -10,6 +10,24 @@ import { z } from "zod";
 import { auth, db } from "./firebase";
 import { doc, updateDoc } from "firebase/firestore";
 
+// Add this middleware to verify Firebase ID token
+async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: "No authentication token provided" });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await auth.verifyIdToken(idToken);
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return res.status(401).json({ message: "Invalid authentication token" });
+  }
+}
+
 declare global {
   namespace Express {
     interface User extends SelectUser {}
@@ -284,11 +302,7 @@ export function setupAuth(app: Express) {
   });
 
   // NEW 2FA ENDPOINTS
-  app.post("/api/auth/send-2fa-code", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
+  app.post("/api/auth/send-2fa-code", verifyFirebaseToken, async (req, res) => {
     try {
       if (!req.user?.email) {
         return res.status(400).json({ message: "User email not found" });
@@ -326,11 +340,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/auth/verify-2fa-code", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
+  app.post("/api/auth/verify-2fa-code", verifyFirebaseToken, async (req, res) => {
     try {
       const { code } = req.body;
       const storedCode = req.session.twoFactorCode;

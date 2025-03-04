@@ -51,10 +51,14 @@ export function EmailTwoFactorAuth() {
 
     try {
       setIsEnabling(true);
+      // Get the current user's ID token
+      const idToken = await user.getIdToken();
+
       const response = await fetch("/api/auth/send-2fa-code", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`,
         },
       });
 
@@ -84,10 +88,14 @@ export function EmailTwoFactorAuth() {
   const onSubmit = async (data: z.infer<typeof otpSchema>) => {
     try {
       setIsEnabling(true);
+      // Get the current user's ID token
+      const idToken = await user.getIdToken();
+
       const response = await fetch("/api/auth/verify-2fa-code", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`,
         },
         body: JSON.stringify({ code: data.code }),
       });
