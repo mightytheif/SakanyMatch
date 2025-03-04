@@ -14,10 +14,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { User } from "lucide-react";
+import { User, Building } from "lucide-react";
 
 export function Navbar() {
   const { user, logout, isAdmin } = useAuth();
+  const isLandlord = user?.displayName?.split('|')[1] === 'landlord';
 
   return (
     <header className="border-b">
@@ -101,8 +102,13 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              {user.displayName?.split('|')[1] === 'landlord' && (
-                <Button>List Property</Button>
+              {isLandlord && (
+                <Link href="/properties/add">
+                  <Button className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    List Property
+                  </Button>
+                </Link>
               )}
             </>
           ) : (
