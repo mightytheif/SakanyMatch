@@ -8,7 +8,6 @@ import { storage } from "./storage";
 import { User as SelectUser, updateUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { auth, db } from "./firebase";
-import { doc, updateDoc } from "firebase/firestore";
 import { initializeEmailService, sendVerificationCode } from './services/email';
 
 // Update only the verifyFirebaseToken middleware
@@ -382,8 +381,8 @@ export function setupAuth(app: Express) {
       }
 
       // Update the user's 2FA status in Firestore
-      const userRef = doc(db, "users", req.user.uid);
-      await updateDoc(userRef, {
+      const userRef = db.collection('users').doc(req.user.uid);
+      await userRef.update({
         twoFactorEnabled: true,
       });
 
