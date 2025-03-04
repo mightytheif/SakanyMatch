@@ -14,7 +14,18 @@ interface ImageUploadProps {
 export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  const storage = getStorage(app);
+
+  let storage;
+  try {
+    storage = getStorage(app);
+  } catch (error) {
+    console.error("Failed to initialize Firebase Storage:", error);
+    toast({
+      title: "Storage Error",
+      description: "Failed to initialize storage. Please try again later.",
+      variant: "destructive",
+    });
+  }
 
   const handleUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,20 +53,30 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
     }
 
     try {
-      setIsUploading(true);
-
-      // Create a unique file path
-      const fileName = `${Date.now()}-${file.name}`;
-      const storageRef = ref(storage, `property-images/${fileName}`);
-
-      // Upload the file
-      const uploadResult = await uploadBytes(storageRef, file);
-      if (!uploadResult) {
-        throw new Error("Upload failed");
+      if (!storage) {
+        throw new Error("Storage not initialized");
       }
 
-      // Get the download URL
-      const url = await getDownloadURL(storageRef);
+      setIsUploading(true);
+      console.log('Starting upload process...');
+
+      // Create a unique file path with timestamp and file name
+      const timestamp = Date.now();
+      const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const storageRef = ref(storage, `property-images/${fileName}`);
+
+      console.log('Uploading file:', fileName);
+      const uploadResult = await uploadBytes(storageRef, file);
+      console.log('Upload completed:', uploadResult);
+
+      if (!uploadResult) {
+        throw new Error("Upload failed - no upload result returned");
+      }
+
+      console.log('Getting download URL...');
+      const url = await getDownloadURL(uploadResult.ref);
+      console.log('Got download URL:', url);
+
       if (!url) {
         throw new Error("Failed to get download URL");
       }
@@ -69,13 +90,23 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
       });
     } catch (error: any) {
       console.error("Upload error:", error);
+      let errorMessage = "Failed to upload image. Please try again.";
+
+      if (error.code === 'storage/unauthorized') {
+        errorMessage = "Permission denied. Please check your Firebase Storage rules.";
+      } else if (error.code === 'storage/canceled') {
+        errorMessage = "Upload was canceled.";
+      } else if (error.code === 'storage/unknown') {
+        errorMessage = "An unknown error occurred. Please try again.";
+      } else if (error.message === "Storage not initialized") {
+        errorMessage = "Storage service is not available. Please try again later.";
+      }
+
       toast({
         title: "Upload failed",
-        description: error.message || "Failed to upload image. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
-      // Reset the upload state on error
-      setIsUploading(false);
     } finally {
       setIsUploading(false);
       // Reset the input value to allow uploading the same file again
