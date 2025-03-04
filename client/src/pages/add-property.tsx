@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -41,7 +41,7 @@ const propertySchema = z.object({
 type PropertyForm = z.infer<typeof propertySchema>;
 
 export default function AddProperty() {
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -226,8 +226,8 @@ export default function AddProperty() {
                   <FormControl>
                     <ImageUpload
                       value={field.value}
-                      onChange={(urls) => field.onChange(urls)}
-                      onRemove={(url) =>
+                      onChange={(urls: string[]) => field.onChange(urls)}
+                      onRemove={(url: string) =>
                         field.onChange(field.value.filter((val) => val !== url))
                       }
                     />
