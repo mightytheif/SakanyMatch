@@ -34,7 +34,7 @@ const propertySchema = z.object({
   bedrooms: z.coerce.number().min(1, "Number of bedrooms must be at least 1"),
   bathrooms: z.coerce.number().min(1, "Number of bathrooms must be at least 1"),
   area: z.coerce.number().min(1, "Area must be greater than 0 square meters"),
-  type: z.enum(["house", "apartment", "condo"]),
+  type: z.enum(["house", "apartment"]),
   images: z.array(z.string()).min(1, "At least one image is required"),
 });
 
@@ -211,9 +211,8 @@ export default function AddProperty() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="house">House</SelectItem>
                       <SelectItem value="apartment">Apartment</SelectItem>
-                      <SelectItem value="condo">Condo</SelectItem>
+                      <SelectItem value="house">House</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
