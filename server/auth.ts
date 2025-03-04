@@ -235,7 +235,7 @@ export function setupAuth(app: Express) {
         await storage.updateTwoFactorSecret(req.user.id, secret);
       }
 
-      await storage.updateUser(req.user.id, { 
+      await storage.updateUser(req.user.id, {
         twoFactorEnabled: enabled,
       });
 
@@ -278,6 +278,63 @@ export function setupAuth(app: Express) {
       res.sendStatus(204);
     } catch (error) {
       res.status(500).json({ message: "Error deleting user" });
+    }
+  });
+
+  // NEW 2FA ENDPOINTS
+  app.post("/api/auth/send-2fa-code", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      // Generate a random 6-digit code
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Store the code in the session with an expiration time (5 minutes)
+      req.session.twoFactorCode = {
+        code,
+        expires: Date.now() + 5 * 60 * 1000
+      };
+
+      // In a real application, send this code via email
+      // For now, we'll just log it (you should implement proper email sending)
+      console.log("2FA Code:", code);
+
+      res.json({ message: "Verification code sent" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to send verification code" });
+    }
+  });
+
+  app.post("/api/auth/verify-2fa-code", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const { code } = req.body;
+      const storedCode = req.session.twoFactorCode;
+
+      if (!storedCode || !storedCode.code || Date.now() > storedCode.expires) {
+        return res.status(400).json({ message: "Code expired or invalid" });
+      }
+
+      if (code !== storedCode.code) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      // Enable 2FA for the user
+      await storage.updateUser(req.user.id, {
+        twoFactorEnabled: true,
+      } as any);
+
+      // Clear the code from session
+      delete req.session.twoFactorCode;
+
+      res.json({ message: "Two-factor authentication enabled" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to verify code" });
     }
   });
 }

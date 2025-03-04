@@ -1,9 +1,4 @@
 import { useState } from "react";
-import {
-  EmailAuthProvider,
-  multiFactor,
-  sendEmailVerification,
-} from "firebase/auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,16 +9,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const otpSchema = z.object({
+  code: z.string().length(6, "Verification code must be 6 digits"),
+});
 
 export function EmailTwoFactorAuth() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEnabling, setIsEnabling] = useState(false);
+  const [showOTPInput, setShowOTPInput] = useState(false);
 
-  const mfa = user ? multiFactor(user) : null;
-  const isEnabled = mfa?.enrolledFactors?.length > 0;
+  const form = useForm({
+    resolver: zodResolver(otpSchema),
+    defaultValues: {
+      code: "",
+    },
+  });
 
-  const enableEmailTwoFactor = async () => {
+  const handleSendOTP = async () => {
     if (!user || !user.emailVerified) {
       toast({
         title: "Email verification required",
@@ -35,31 +51,26 @@ export function EmailTwoFactorAuth() {
 
     try {
       setIsEnabling(true);
-
-      // Create the email auth provider
-      const provider = new EmailAuthProvider();
-
-      // Get the MFA session
-      const multiFactorSession = await multiFactor(user).getSession();
-
-      // Enroll the email as a second factor
-      await multiFactor(user).enroll(multiFactorSession, "Email verification");
-
-      toast({
-        title: "Success",
-        description: "Email-based two-factor authentication has been enabled",
+      const response = await fetch("/api/auth/send-2fa-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-    } catch (error: any) {
-      console.error("2FA Error:", error);
-      let errorMessage = error.message;
 
-      if (error.code === 'auth/requires-recent-login') {
-        errorMessage = "Please sign out and sign in again to enable 2FA";
+      if (!response.ok) {
+        throw new Error("Failed to send verification code");
       }
 
+      setShowOTPInput(true);
+      toast({
+        title: "Verification code sent",
+        description: "Please check your email for the verification code",
+      });
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: errorMessage,
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -67,17 +78,27 @@ export function EmailTwoFactorAuth() {
     }
   };
 
-  const disableEmailTwoFactor = async () => {
-    if (!user || !mfa?.enrolledFactors[0]) return;
-
+  const onSubmit = async (data: z.infer<typeof otpSchema>) => {
     try {
       setIsEnabling(true);
-      await multiFactor(user).unenroll(mfa.enrolledFactors[0]);
+      const response = await fetch("/api/auth/verify-2fa-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: data.code }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid verification code");
+      }
 
       toast({
         title: "Success",
-        description: "Two-factor authentication has been disabled",
+        description: "Two-factor authentication has been enabled",
       });
+      setShowOTPInput(false);
+      form.reset();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -98,26 +119,13 @@ export function EmailTwoFactorAuth() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isEnabled ? (
+        {!showOTPInput ? (
           <div className="space-y-4">
             <p className="text-sm">
-              Email-based two-factor authentication is currently enabled. A verification code will be sent to your email when signing in from unrecognized devices.
-            </p>
-            <Button
-              onClick={disableEmailTwoFactor}
-              variant="destructive"
-              disabled={isEnabling}
-            >
-              {isEnabling ? "Disabling..." : "Disable 2FA"}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
               When enabled, you'll need to verify your identity through your email when signing in from a new device.
             </p>
             <Button
-              onClick={enableEmailTwoFactor}
+              onClick={handleSendOTP}
               disabled={isEnabling || !user?.emailVerified}
             >
               {isEnabling ? "Enabling..." : "Enable Email 2FA"}
@@ -128,6 +136,39 @@ export function EmailTwoFactorAuth() {
               </p>
             )}
           </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Verification Code</FormLabel>
+                    <FormControl>
+                      <Input type="text" maxLength={6} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowOTPInput(false);
+                    form.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isEnabling}>
+                  {isEnabling ? "Verifying..." : "Verify"}
+                </Button>
+              </div>
+            </form>
+          </Form>
         )}
       </CardContent>
     </Card>
