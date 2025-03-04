@@ -49,10 +49,16 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
       const storageRef = ref(storage, `property-images/${fileName}`);
 
       // Upload the file
-      await uploadBytes(storageRef, file);
+      const uploadResult = await uploadBytes(storageRef, file);
+      if (!uploadResult) {
+        throw new Error("Upload failed");
+      }
 
       // Get the download URL
       const url = await getDownloadURL(storageRef);
+      if (!url) {
+        throw new Error("Failed to get download URL");
+      }
 
       // Update the form
       onChange([...value, url]);
@@ -65,11 +71,17 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
       console.error("Upload error:", error);
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: error.message || "Failed to upload image. Please try again.",
         variant: "destructive",
       });
+      // Reset the upload state on error
+      setIsUploading(false);
     } finally {
       setIsUploading(false);
+      // Reset the input value to allow uploading the same file again
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   }, [value, onChange, toast, storage]);
 
