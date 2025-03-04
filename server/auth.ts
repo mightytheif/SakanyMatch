@@ -9,6 +9,7 @@ import { User as SelectUser, updateUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { auth, db } from "./firebase";
 import { doc, updateDoc } from "firebase/firestore";
+import { initializeEmailService, sendVerificationCode } from './services/email';
 
 // Update only the verifyFirebaseToken middleware
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
@@ -79,7 +80,11 @@ function isAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// Initialize email service when setting up auth
 export function setupAuth(app: Express) {
+  // Initialize the email service
+  initializeEmailService().catch(console.error);
+
   const sessionSettings: session.SessionOptions = {
     secret: "sakany-secret-key",
     resave: false,
@@ -336,14 +341,15 @@ export function setupAuth(app: Express) {
       };
 
       try {
-        // For development/testing purposes, log the code
+        // Send the verification code via email
+        await sendVerificationCode(req.user.email, code);
+
+        // For development, also log the code
         console.log("2FA Code for testing:", code);
 
-        // TODO: In production, implement actual email sending here
-        // For now, we'll simulate successful code sending
         res.json({ 
           message: "Verification code sent",
-          debug: "Check server console for the code" // Remove in production
+          debug: "Check your email or the server console for the code" // Remove in production
         });
       } catch (emailError: any) {
         console.error("Email sending error:", emailError);
