@@ -27,7 +27,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { TwoFactorAuth } from "@/components/two-factor-auth";
 
 const profileSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -38,7 +37,7 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
-  const { user, updateUserProfile, deleteAccount, sendVerificationEmail } = useAuth(); // Added sendVerificationEmail
+  const { user, updateUserProfile, deleteAccount, sendVerificationEmail } = useAuth();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -252,7 +251,7 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-4">
                   <p className="text-amber-600">
-                    Please verify your email address. This is required for enabling two-factor authentication.
+                    Please verify your email address to secure your account.
                   </p>
                   <Button onClick={() => sendVerificationEmail()}>
                     Resend Verification Email
@@ -262,8 +261,6 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
-
-        <TwoFactorAuth />
       </div>
     </div>
   );

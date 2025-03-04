@@ -10,11 +10,6 @@ import {
   updatePassword,
   deleteUser,
   type User as FirebaseUser,
-  multiFactor,
-  PhoneAuthProvider,
-  PhoneMultiFactorGenerator,
-  MultiFactorError,
-  getMultiFactorResolver,
   sendEmailVerification,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -26,7 +21,6 @@ type AuthContextType = {
   isLoading: boolean;
   error: Error | null;
   login: (email: string, password: string) => Promise<void>;
-  loginWithMfaVerification: (verificationId: string, verificationCode: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string, isLandlord: boolean, isAdmin?: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -34,8 +28,6 @@ type AuthContextType = {
   deleteAccount: () => Promise<void>;
   isAdmin: boolean;
   loginAsAdmin: (email: string, password: string) => Promise<void>;
-  mfaResolver: any;
-  setMfaResolver: (resolver: any) => void;
   sendVerificationEmail: () => Promise<void>;
 };
 
@@ -46,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [mfaResolver, setMfaResolver] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,26 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Successfully logged in",
       });
     } catch (error: any) {
-      // Handle MFA required error
-      if (error.code === 'auth/multi-factor-auth-required') {
-        const resolver = getMultiFactorResolver(auth, error);
-        setMfaResolver(resolver);
-
-        // Send verification code
-        const phoneAuthProvider = new PhoneAuthProvider(auth);
-        const verificationId = await phoneAuthProvider.verifyPhoneNumber(
-          resolver.hints[0],
-          resolver.session
-        );
-
-        toast({
-          title: "2FA Required",
-          description: "Please enter the verification code sent to your phone",
-        });
-
-        return; // Indicate MFA is required
-      }
-
       toast({
         title: "Login failed",
         description: error.message,
@@ -166,30 +137,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       toast({
         title: "Registration failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const loginWithMfaVerification = async (verificationId: string, verificationCode: string) => {
-    if (!mfaResolver) return;
-
-    try {
-      const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
-      const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
-      await mfaResolver.resolveSignIn(multiFactorAssertion);
-
-      setMfaResolver(null);
-
-      toast({
-        title: "Welcome back!",
-        description: "Successfully logged in",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Verification failed",
         description: error.message,
         variant: "destructive",
       });
@@ -322,7 +269,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         error,
         login,
-        loginWithMfaVerification,
         register,
         logout,
         resetPassword,
@@ -330,8 +276,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         deleteAccount,
         isAdmin,
         loginAsAdmin,
-        mfaResolver,
-        setMfaResolver,
         sendVerificationEmail,
       }}
     >
