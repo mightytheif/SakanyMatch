@@ -60,14 +60,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await sendEmailVerification(user);
+
+      // Store the last verification attempt time in localStorage
+      localStorage.setItem('lastEmailVerificationAttempt', Date.now().toString());
+
       toast({
         title: "Verification email sent",
         description: "Please check your email to verify your account",
       });
     } catch (error: any) {
+      console.error("Email verification error:", error);
+      let errorMessage = "Failed to send verification email";
+
+      if (error.code === 'auth/too-many-requests') {
+        // Check when the last attempt was made
+        const lastAttempt = localStorage.getItem('lastEmailVerificationAttempt');
+        if (lastAttempt) {
+          const timeSinceLastAttempt = Date.now() - parseInt(lastAttempt);
+          const minutesLeft = Math.ceil((60 * 1000 - timeSinceLastAttempt) / (60 * 1000));
+
+          if (minutesLeft > 0) {
+            errorMessage = `Please wait ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''} before requesting another verification email`;
+          }
+        }
+      }
+
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
