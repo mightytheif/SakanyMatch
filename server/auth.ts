@@ -10,21 +10,39 @@ import { z } from "zod";
 import { auth, db } from "./firebase";
 import { doc, updateDoc } from "firebase/firestore";
 
-// Add this middleware to verify Firebase ID token
+// Update only the verifyFirebaseToken middleware
 async function verifyFirebaseToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: "No authentication token provided" });
+    return res.status(401).json({ 
+      message: "No authentication token provided",
+      details: "Authorization header missing or invalid format"
+    });
   }
 
   const idToken = authHeader.split('Bearer ')[1];
   try {
     const decodedToken = await auth.verifyIdToken(idToken);
+
+    // Log successful verification for debugging
+    console.log("Token verified successfully for user:", decodedToken.uid);
+
     req.user = decodedToken;
     next();
-  } catch (error) {
+  } catch (error: any) {
     console.error("Token verification error:", error);
-    return res.status(401).json({ message: "Invalid authentication token" });
+
+    let errorMessage = "Invalid authentication token";
+    if (error.code === 'auth/id-token-expired') {
+      errorMessage = "Authentication token has expired";
+    } else if (error.code === 'auth/invalid-credential') {
+      errorMessage = "Invalid credentials. Please check Firebase Admin configuration";
+    }
+
+    return res.status(401).json({ 
+      message: errorMessage,
+      details: error.message 
+    });
   }
 }
 
