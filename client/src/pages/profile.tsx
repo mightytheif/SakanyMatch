@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { EmailTwoFactorAuth } from "@/components/email-2fa";
 
 const profileSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -251,7 +252,7 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-4">
                   <p className="text-amber-600">
-                    Please verify your email address to secure your account.
+                    Please verify your email address to secure your account and enable two-factor authentication.
                     If you don't receive the email, you can request another one after a short waiting period.
                   </p>
                   <Button
@@ -265,6 +266,8 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        <EmailTwoFactorAuth />
       </div>
     </div>
   );
