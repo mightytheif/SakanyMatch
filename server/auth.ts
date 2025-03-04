@@ -342,14 +342,18 @@ export function setupAuth(app: Express) {
 
       try {
         // Send the verification code via email
-        await sendVerificationCode(req.user.email, code);
+        const emailInfo = await sendVerificationCode(req.user.email, code);
 
-        // For development, also log the code
-        console.log("2FA Code for testing:", code);
+        // For development, log the code and preview URL in a more visible way
+        console.log("\n=== 2FA Test Information ===");
+        console.log(`Email sent to: ${req.user.email}`);
+        console.log(`2FA Code for testing: ${code}`);
+        console.log(`Preview URL: ${emailInfo.previewUrl}`);
+        console.log("===========================\n");
 
         res.json({ 
           message: "Verification code sent",
-          debug: "Check your email or the server console for the code" // Remove in production
+          debug: "Check the server console logs for the test code and email preview URL"
         });
       } catch (emailError: any) {
         console.error("Email sending error:", emailError);

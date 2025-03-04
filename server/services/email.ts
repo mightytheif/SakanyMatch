@@ -45,7 +45,11 @@ export const sendVerificationCode = async (to: string, code: string) => {
   });
 
   // Log the test email URL (only in development)
-  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-  
-  return info;
+  const previewUrl = nodemailer.getTestMessageUrl(info);
+  console.log("Preview URL: %s", previewUrl);
+
+  return {
+    ...info,
+    previewUrl
+  };
 };
