@@ -38,7 +38,7 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
   const [, navigate] = useLocation();
-  const { user, updateUserProfile, deleteAccount } = useAuth();
+  const { user, updateUserProfile, deleteAccount, sendVerificationEmail } = useAuth(); // Added sendVerificationEmail
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -236,6 +236,28 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">
                   As an administrator, you have access to the admin dashboard where you can manage users and permissions.
                 </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Email Verification</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {user?.emailVerified ? (
+                <p className="text-green-600">Your email is verified ✓</p>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-amber-600">
+                    Please verify your email address. This is required for enabling two-factor authentication.
+                  </p>
+                  <Button onClick={() => sendVerificationEmail()}>
+                    Resend Verification Email
+                  </Button>
+                </div>
               )}
             </div>
           </CardContent>

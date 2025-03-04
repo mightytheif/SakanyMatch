@@ -15,6 +15,7 @@ import {
   PhoneMultiFactorGenerator,
   MultiFactorError,
   getMultiFactorResolver,
+  sendEmailVerification,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
@@ -35,6 +36,7 @@ type AuthContextType = {
   loginAsAdmin: (email: string, password: string) => Promise<void>;
   mfaResolver: any;
   setMfaResolver: (resolver: any) => void;
+  sendVerificationEmail: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -61,6 +63,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
   }, []);
+
+  const sendVerificationEmail = async () => {
+    if (!user) return;
+
+    try {
+      await sendEmailVerification(user);
+      toast({
+        title: "Verification email sent",
+        description: "Please check your email to verify your account",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -99,30 +120,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginWithMfaVerification = async (verificationId: string, verificationCode: string) => {
-    if (!mfaResolver) return;
-
-    try {
-      const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
-      const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
-      await mfaResolver.resolveSignIn(multiFactorAssertion);
-
-      setMfaResolver(null);
-
-      toast({
-        title: "Welcome back!",
-        description: "Successfully logged in",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Verification failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
   const register = async (name: string, email: string, password: string, isLandlord: boolean, isAdmin: boolean = false) => {
     try {
       // Check if trying to register as admin with valid email
@@ -134,11 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Set display name with proper roles
       const displayNameParts = [name];
-
-      // Add user type (landlord/user)
       displayNameParts.push(isLandlord ? 'landlord' : 'user');
-
-      // Add admin status if applicable
       if (isAdmin || email.toLowerCase().endsWith('@sakany.com')) {
         displayNameParts.push('admin');
       }
@@ -158,18 +151,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString()
       });
 
+      // Send verification email
+      await sendEmailVerification(user);
+
+      toast({
+        title: "Welcome to SAKANY!",
+        description: "Please check your email to verify your account",
+      });
+
       // If it's an admin account, log in as admin
       if (isAdmin || email.toLowerCase().endsWith('@sakany.com')) {
         await loginAsAdmin(email, password);
       }
-
-      toast({
-        title: "Welcome to SAKANY!",
-        description: "Your account has been created successfully",
-      });
     } catch (error: any) {
       toast({
         title: "Registration failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const loginWithMfaVerification = async (verificationId: string, verificationCode: string) => {
+    if (!mfaResolver) return;
+
+    try {
+      const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
+      const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+      await mfaResolver.resolveSignIn(multiFactorAssertion);
+
+      setMfaResolver(null);
+
+      toast({
+        title: "Welcome back!",
+        description: "Successfully logged in",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Verification failed",
         description: error.message,
         variant: "destructive",
       });
@@ -312,6 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginAsAdmin,
         mfaResolver,
         setMfaResolver,
+        sendVerificationEmail,
       }}
     >
       {children}

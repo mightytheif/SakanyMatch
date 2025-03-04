@@ -47,6 +47,15 @@ export function TwoFactorAuth() {
   const startEnrollment = async () => {
     if (!user || !phoneNumber) return;
 
+    if (!user.emailVerified) {
+      toast({
+        title: "Email verification required",
+        description: "Please verify your email address before enabling 2FA",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsEnrolling(true);
 
