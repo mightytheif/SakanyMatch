@@ -58,16 +58,19 @@ export function EmailTwoFactorAuth() {
         },
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to send verification code");
+        throw new Error(data.details || data.message || "Failed to send verification code");
       }
 
       setShowOTPInput(true);
       toast({
         title: "Verification code sent",
-        description: "Please check your email for the verification code",
+        description: "Please check your email for the verification code. For testing, check the server console logs.",
       });
     } catch (error: any) {
+      console.error("2FA Error:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -89,8 +92,10 @@ export function EmailTwoFactorAuth() {
         body: JSON.stringify({ code: data.code }),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        throw new Error("Invalid verification code");
+        throw new Error(responseData.details || responseData.message || "Failed to verify code");
       }
 
       toast({
@@ -100,6 +105,7 @@ export function EmailTwoFactorAuth() {
       setShowOTPInput(false);
       form.reset();
     } catch (error: any) {
+      console.error("2FA Verification Error:", error);
       toast({
         title: "Error",
         description: error.message,

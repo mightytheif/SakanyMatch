@@ -7,6 +7,8 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, updateUserSchema } from "@shared/schema";
 import { z } from "zod";
+import { auth, db } from "./firebase";
+import { doc, updateDoc } from "firebase/firestore";
 
 declare global {
   namespace Express {
@@ -288,6 +290,10 @@ export function setupAuth(app: Express) {
     }
 
     try {
+      if (!req.user?.email) {
+        return res.status(400).json({ message: "User email not found" });
+      }
+
       // Generate a random 6-digit code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -297,13 +303,26 @@ export function setupAuth(app: Express) {
         expires: Date.now() + 5 * 60 * 1000
       };
 
-      // In a real application, send this code via email
-      // For now, we'll just log it (you should implement proper email sending)
-      console.log("2FA Code:", code);
+      try {
+        // For development/testing purposes, log the code
+        console.log("2FA Code for testing:", code);
 
-      res.json({ message: "Verification code sent" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to send verification code" });
+        // TODO: In production, implement actual email sending here
+        // For now, we'll simulate successful code sending
+        res.json({ 
+          message: "Verification code sent",
+          debug: "Check server console for the code" // Remove in production
+        });
+      } catch (emailError: any) {
+        console.error("Email sending error:", emailError);
+        throw new Error("Failed to send verification email");
+      }
+    } catch (error: any) {
+      console.error("2FA error:", error);
+      res.status(500).json({
+        message: "Failed to process verification code request",
+        details: error.message
+      });
     }
   });
 
@@ -324,17 +343,22 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Invalid verification code" });
       }
 
-      // Enable 2FA for the user
-      await storage.updateUser(req.user.id, {
+      // Update the user's 2FA status in Firestore
+      const userRef = doc(db, "users", req.user.uid);
+      await updateDoc(userRef, {
         twoFactorEnabled: true,
-      } as any);
+      });
 
       // Clear the code from session
       delete req.session.twoFactorCode;
 
       res.json({ message: "Two-factor authentication enabled" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to verify code" });
+    } catch (error: any) {
+      console.error("2FA verification error:", error);
+      res.status(500).json({
+        message: "Failed to verify code",
+        details: error.message
+      });
     }
   });
 }
