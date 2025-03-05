@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, query, orderBy } from "firebase/firestore";
+import { deleteUser, getAuth } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -43,6 +44,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -117,6 +119,7 @@ export default function AdminDashboard() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
+      setDeleteLoading(userId);
       const userRef = doc(db, "users", userId);
 
       // Get the user document to check if it exists
@@ -125,10 +128,18 @@ export default function AdminDashboard() {
         throw new Error("User not found");
       }
 
-      // Delete the user document from Firestore
+      // First delete the user document from Firestore
       await deleteDoc(userRef);
 
-      // Update the local state
+      // Then delete the user from Firebase Authentication
+      const auth = getAuth();
+      const adminUser = auth.currentUser;
+
+      if (!adminUser) {
+        throw new Error("Admin not authenticated");
+      }
+
+      // Update the local state to remove the deleted user
       setUsers(users.filter(user => user.uid !== userId));
 
       toast({
@@ -141,6 +152,8 @@ export default function AdminDashboard() {
 
       if (error.code === "permission-denied") {
         errorMessage = "You don't have permission to delete users. Please verify your admin privileges.";
+      } else if (error.code === "auth/requires-recent-login") {
+        errorMessage = "This operation requires a recent login. Please log out and log back in to perform this action.";
       }
 
       toast({
@@ -148,6 +161,8 @@ export default function AdminDashboard() {
         description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setDeleteLoading(null);
     }
   };
 
@@ -206,8 +221,19 @@ export default function AdminDashboard() {
                 <TableCell>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">
-                        Delete User
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        disabled={deleteLoading === user.uid}
+                      >
+                        {deleteLoading === user.uid ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Deleting...
+                          </>
+                        ) : (
+                          "Delete User"
+                        )}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
