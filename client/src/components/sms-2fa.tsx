@@ -60,6 +60,15 @@ export function SMS2FASetup() {
       return;
     }
 
+    if (!user.emailVerified) {
+      toast({
+        title: "Error",
+        description: "Please verify your email address before setting up 2FA",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       setupRecaptcha();
