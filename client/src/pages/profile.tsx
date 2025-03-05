@@ -27,7 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { EmailTwoFactorAuth } from "@/components/email-2fa";
+import { SMS2FASetup } from "@/components/sms-2fa";
 
 const profileSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
@@ -43,7 +43,6 @@ export default function ProfilePage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Extract the actual name without the user type suffix
   const displayName = user?.displayName?.split("|")[0] || "";
   const userType = user?.displayName?.split("|")[1] || "user";
   const isAdmin = user?.displayName?.split("|").includes("admin") || false;
@@ -88,7 +87,6 @@ export default function ProfilePage() {
           description: "Your profile has been updated successfully.",
         });
 
-        // Clear password fields
         form.setValue("currentPassword", "");
         form.setValue("newPassword", "");
       }
@@ -267,7 +265,14 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <EmailTwoFactorAuth />
+        <Card>
+          <CardHeader>
+            <CardTitle>Two-Factor Authentication</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SMS2FASetup />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
