@@ -92,8 +92,8 @@ export default function AdminDashboard() {
         canListProperties: !currentValue
       });
 
-      setUsers(users.map(user => 
-        user.uid === userId 
+      setUsers(users.map(user =>
+        user.uid === userId
           ? { ...user, canListProperties: !currentValue }
           : user
       ));
@@ -140,12 +140,17 @@ export default function AdminDashboard() {
       console.error("Error deleting user:", error);
       let errorMessage = "Failed to delete user";
 
-      if (error.code === "permission-denied") {
+      // Handle specific error cases
+      if (error.code === "functions/not-found") {
+        errorMessage = "User no longer exists in the system.";
+      } else if (error.code === "functions/invalid-argument") {
+        errorMessage = "Invalid user information provided.";
+      } else if (error.code === "functions/permission-denied") {
         errorMessage = "You don't have permission to delete users. Please verify your admin privileges.";
-      } else if (error.code === "auth/requires-recent-login") {
-        errorMessage = "This operation requires a recent login. Please log out and log back in to perform this action.";
       } else if (error.code === "functions/unauthenticated") {
-        errorMessage = "You must be authenticated as an admin to perform this action.";
+        errorMessage = "Please sign in again to perform this action.";
+      } else if (error.code === "functions/internal") {
+        errorMessage = "An internal error occurred. Please try again later.";
       }
 
       toast({
@@ -198,11 +203,11 @@ export default function AdminDashboard() {
                 <TableCell>{user.displayName?.split('|')[0]}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  {user.displayName?.includes('admin') 
-                    ? "Administrator" 
-                    : user.isLandlord 
-                    ? "Landlord" 
-                    : "Regular User"}
+                  {user.displayName?.includes('admin')
+                    ? "Administrator"
+                    : user.isLandlord
+                      ? "Landlord"
+                      : "Regular User"}
                 </TableCell>
                 <TableCell>
                   <Switch
@@ -213,8 +218,8 @@ export default function AdminDashboard() {
                 <TableCell>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="destructive" 
+                      <Button
+                        variant="destructive"
                         size="sm"
                         disabled={deleteLoading === user.uid}
                       >

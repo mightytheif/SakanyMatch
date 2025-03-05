@@ -31,7 +31,8 @@ export const deleteUser = functions.https.onCall(async (data, context) => {
   try {
     const callerDoc = await db.collection('users').doc(callerUid).get();
     const callerData = callerDoc.data();
-    const isAdmin = callerData?.displayName?.includes('admin');
+    const isAdmin = callerData?.displayName?.includes('admin') || 
+                   callerData?.email?.toLowerCase().endsWith('@sakany.com');
 
     if (!isAdmin) {
       throw new functions.https.HttpsError(
@@ -55,12 +56,32 @@ export const deleteUser = functions.https.onCall(async (data, context) => {
     // Delete from Firestore
     await db.collection('users').doc(userId).delete();
 
+    console.log(`Successfully deleted user ${userId}`);
     return { success: true, message: 'User deleted successfully' };
   } catch (error: any) {
     console.error('Error deleting user:', error);
+
+    // More specific error messages based on the error type
+    if (error.code === 'auth/user-not-found') {
+      throw new functions.https.HttpsError(
+        'not-found',
+        'User does not exist.'
+      );
+    } else if (error.code === 'auth/invalid-uid') {
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'Invalid user ID provided.'
+      );
+    } else if (error.code === 'permission-denied') {
+      throw new functions.https.HttpsError(
+        'permission-denied',
+        'You do not have permission to delete users.'
+      );
+    }
+
     throw new functions.https.HttpsError(
       'internal',
-      error.message || 'An error occurred while deleting the user'
+      'An error occurred while deleting the user. Please try again.'
     );
   }
 });
