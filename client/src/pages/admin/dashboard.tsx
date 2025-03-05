@@ -23,11 +23,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, query, orderBy } from "firebase/firestore";
-import { getAuth, deleteUser as deleteAuthUser } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertCircle } from "lucide-react";
-import { httpsCallable, getFunctions } from "firebase/functions";
 
 interface User {
   uid: string;
@@ -45,7 +43,6 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -92,8 +89,8 @@ export default function AdminDashboard() {
         canListProperties: !currentValue
       });
 
-      setUsers(users.map(user =>
-        user.uid === userId
+      setUsers(users.map(user => 
+        user.uid === userId 
           ? { ...user, canListProperties: !currentValue }
           : user
       ));
@@ -120,16 +117,18 @@ export default function AdminDashboard() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      setDeleteLoading(userId);
+      const userRef = doc(db, "users", userId);
 
-      // Get Firebase Functions instance
-      const functions = getFunctions();
-      const deleteUserFunction = httpsCallable(functions, 'deleteUser');
+      // Get the user document to check if it exists
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) {
+        throw new Error("User not found");
+      }
 
-      // Call the Cloud Function to delete the user
-      await deleteUserFunction({ userId });
+      // Delete the user document from Firestore
+      await deleteDoc(userRef);
 
-      // If deletion was successful, update local state
+      // Update the local state
       setUsers(users.filter(user => user.uid !== userId));
 
       toast({
@@ -140,17 +139,8 @@ export default function AdminDashboard() {
       console.error("Error deleting user:", error);
       let errorMessage = "Failed to delete user";
 
-      // Handle specific error cases
-      if (error.code === "functions/not-found") {
-        errorMessage = "User no longer exists in the system.";
-      } else if (error.code === "functions/invalid-argument") {
-        errorMessage = "Invalid user information provided.";
-      } else if (error.code === "functions/permission-denied") {
+      if (error.code === "permission-denied") {
         errorMessage = "You don't have permission to delete users. Please verify your admin privileges.";
-      } else if (error.code === "functions/unauthenticated") {
-        errorMessage = "Please sign in again to perform this action.";
-      } else if (error.code === "functions/internal") {
-        errorMessage = "An internal error occurred. Please try again later.";
       }
 
       toast({
@@ -158,8 +148,6 @@ export default function AdminDashboard() {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setDeleteLoading(null);
     }
   };
 
@@ -203,11 +191,11 @@ export default function AdminDashboard() {
                 <TableCell>{user.displayName?.split('|')[0]}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  {user.displayName?.includes('admin')
-                    ? "Administrator"
-                    : user.isLandlord
-                      ? "Landlord"
-                      : "Regular User"}
+                  {user.displayName?.includes('admin') 
+                    ? "Administrator" 
+                    : user.isLandlord 
+                    ? "Landlord" 
+                    : "Regular User"}
                 </TableCell>
                 <TableCell>
                   <Switch
@@ -218,19 +206,8 @@ export default function AdminDashboard() {
                 <TableCell>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteLoading === user.uid}
-                      >
-                        {deleteLoading === user.uid ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Deleting...
-                          </>
-                        ) : (
-                          "Delete User"
-                        )}
+                      <Button variant="destructive" size="sm">
+                        Delete User
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
