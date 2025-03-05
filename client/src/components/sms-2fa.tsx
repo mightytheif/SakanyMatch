@@ -49,6 +49,38 @@ export function SMS2FASetup() {
     }
   };
 
+  // Function to validate Saudi phone number
+  const validateSaudiPhoneNumber = (number: string) => {
+    // Remove spaces and dashes
+    const cleanNumber = number.replace(/[\s-]/g, '');
+
+    // Check if it starts with +966 or 966
+    if (!cleanNumber.match(/^(\+966|966)/)) {
+      return false;
+    }
+
+    // Check if the remaining digits form a valid Saudi mobile number
+    // Saudi mobile numbers are 9 digits after the country code
+    const numberWithoutCountryCode = cleanNumber.replace(/^(\+966|966)/, '');
+    return numberWithoutCountryCode.length === 9 && /^[0-9]+$/.test(numberWithoutCountryCode);
+  };
+
+  // Function to format Saudi phone number
+  const formatSaudiPhoneNumber = (number: string) => {
+    let cleanNumber = number.replace(/[\s-]/g, '');
+
+    // Add +966 if not present
+    if (!cleanNumber.startsWith('+')) {
+      if (cleanNumber.startsWith('966')) {
+        cleanNumber = '+' + cleanNumber;
+      } else if (!cleanNumber.startsWith('+966')) {
+        cleanNumber = '+966' + cleanNumber;
+      }
+    }
+
+    return cleanNumber;
+  };
+
   // Function to start phone verification
   const startPhoneVerification = async () => {
     if (!user) {
@@ -69,6 +101,16 @@ export function SMS2FASetup() {
       return;
     }
 
+    // Validate phone number format
+    if (!validateSaudiPhoneNumber(phoneNumber)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid Saudi phone number starting with +966",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       setupRecaptcha();
@@ -80,8 +122,9 @@ export function SMS2FASetup() {
         throw new Error("Failed to get MFA session");
       }
 
+      const formattedPhoneNumber = formatSaudiPhoneNumber(phoneNumber);
       const phoneInfoOptions = {
-        phoneNumber: phoneNumber,
+        phoneNumber: formattedPhoneNumber,
         session: session
       };
 
@@ -206,7 +249,7 @@ export function SMS2FASetup() {
             <div className="flex gap-2">
               <Input
                 type="tel"
-                placeholder="+1234567890"
+                placeholder="+966 5X XXX XXXX"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={isLoading || !!verificationId}
