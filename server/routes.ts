@@ -6,10 +6,35 @@ import { insertPropertySchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import { setupWebSocket } from "./websocket";
+import { getAuth as getAdminAuth } from "firebase-admin/auth";
 
 export async function registerRoutes(app: Express) {
   // Set up authentication routes
   setupAuth(app);
+
+  // Admin endpoints
+  app.post("/api/admin/delete-user", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+
+      // Delete user from Firebase Auth
+      await getAdminAuth().deleteUser(userId);
+      res.status(200).json({ message: "User deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ 
+        message: "Failed to delete user",
+        error: error.message 
+      });
+    }
+  });
 
   // Properties endpoints
   app.get("/api/properties", async (req, res) => {
@@ -32,7 +57,6 @@ export async function registerRoutes(app: Express) {
     res.json(property);
   });
 
-  // Protected route example
   app.post("/api/properties", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });

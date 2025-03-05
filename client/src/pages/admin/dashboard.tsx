@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, query, orderBy } from "firebase/firestore";
+import { getAuth, deleteUser } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -128,6 +129,29 @@ export default function AdminDashboard() {
       // Delete the user document from Firestore
       await deleteDoc(userRef);
 
+      // Delete the user from Firebase Auth using admin SDK
+      try {
+        const response = await fetch(`/api/admin/delete-user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete user from Firebase Auth');
+        }
+      } catch (authError) {
+        console.error("Error deleting user from Firebase Auth:", authError);
+        toast({
+          title: "Warning",
+          description: "User data deleted but there was an issue removing the auth account. The user may still be able to sign in.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Update the local state
       setUsers(users.filter(user => user.uid !== userId));
 
@@ -215,6 +239,7 @@ export default function AdminDashboard() {
                         <AlertDialogTitle>Delete User</AlertDialogTitle>
                         <AlertDialogDescription>
                           Are you sure you want to delete this user? This action cannot be undone.
+                          The user's authentication and all associated data will be permanently removed.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
