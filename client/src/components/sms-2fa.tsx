@@ -10,9 +10,16 @@ import {
   getAuth,
   PhoneAuthProvider,
   PhoneMultiFactorGenerator,
-  MultiFactorResolver,
-  RecaptchaVerifier
+  RecaptchaVerifier,
+  User,
+  MultiFactorUser
 } from "firebase/auth";
+
+declare global {
+  interface Window {
+    recaptchaVerifier: RecaptchaVerifier;
+  }
+}
 
 export function SMS2FASetup() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -22,6 +29,13 @@ export function SMS2FASetup() {
   const { user } = useAuth();
   const { toast } = useToast();
   const auth = getAuth();
+
+  // Function to check if MFA is enabled
+  const isMFAEnabled = () => {
+    if (!user) return false;
+    const multiFactorUser = user as unknown as MultiFactorUser;
+    return multiFactorUser.multiFactor?.enrolledFactors?.length > 0;
+  };
 
   // Function to set up reCAPTCHA verifier
   const setupRecaptcha = () => {
@@ -50,7 +64,9 @@ export function SMS2FASetup() {
       setIsLoading(true);
       setupRecaptcha();
 
-      const session = await user.multiFactor.getSession();
+      const multiFactorUser = user as unknown as MultiFactorUser;
+      const session = await multiFactorUser.multiFactor.getSession();
+
       const phoneInfoOptions = {
         phoneNumber: phoneNumber,
         session: session
@@ -85,9 +101,10 @@ export function SMS2FASetup() {
 
     try {
       setIsLoading(true);
+      const multiFactorUser = user as unknown as MultiFactorUser;
       const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
       const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
-      await user.multiFactor.enroll(multiFactorAssertion, "Phone Number");
+      await multiFactorUser.multiFactor.enroll(multiFactorAssertion, "Phone Number");
 
       toast({
         title: "Success",
@@ -116,9 +133,10 @@ export function SMS2FASetup() {
 
     try {
       setIsLoading(true);
-      const enrolledFactors = await user.multiFactor.getEnrolledFactors();
+      const multiFactorUser = user as unknown as MultiFactorUser;
+      const enrolledFactors = await multiFactorUser.multiFactor.getEnrolledFactors();
       if (enrolledFactors.length > 0) {
-        await user.multiFactor.unenroll(enrolledFactors[0]);
+        await multiFactorUser.multiFactor.unenroll(enrolledFactors[0]);
         toast({
           title: "Success",
           description: "Two-factor authentication has been disabled",
@@ -144,7 +162,7 @@ export function SMS2FASetup() {
         <div className="flex items-center justify-between">
           <Label>SMS Two-Factor Authentication</Label>
           <Switch
-            checked={user?.multiFactor.enrolledFactors.length > 0}
+            checked={isMFAEnabled()}
             onCheckedChange={(checked) => {
               if (!checked) {
                 unenrollMFA();
@@ -158,7 +176,7 @@ export function SMS2FASetup() {
         </p>
       </div>
 
-      {user?.multiFactor.enrolledFactors.length === 0 && (
+      {!isMFAEnabled() && (
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Phone Number</Label>
