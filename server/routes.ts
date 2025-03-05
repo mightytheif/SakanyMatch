@@ -16,8 +16,12 @@ export async function registerRoutes(app: Express) {
   app.post("/api/admin/delete-user", async (req, res) => {
     console.log("Received delete user request");
 
-    if (!req.isAuthenticated() || !req.user.isAdmin) {
-      console.log("Unauthorized delete attempt");
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      console.log("Unauthorized delete attempt", {
+        isAuthenticated: req.isAuthenticated(),
+        user: req.user,
+        isAdmin: req.user?.isAdmin
+      });
       return res.status(403).json({ message: "Not authorized" });
     }
 

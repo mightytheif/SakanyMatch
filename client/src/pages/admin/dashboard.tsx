@@ -23,7 +23,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, query, orderBy } from "firebase/firestore";
-import { getAuth, deleteUser } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -136,6 +135,7 @@ export default function AdminDashboard() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Important: include credentials for session cookie
           body: JSON.stringify({ userId }),
         });
 
