@@ -14,7 +14,10 @@ export async function registerRoutes(app: Express) {
 
   // Admin endpoints
   app.post("/api/admin/delete-user", async (req, res) => {
+    console.log("Received delete user request");
+
     if (!req.isAuthenticated() || !req.user.isAdmin) {
+      console.log("Unauthorized delete attempt");
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -24,14 +27,29 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ message: "User ID is required" });
       }
 
+      console.log(`Attempting to delete user with ID: ${userId}`);
+
       // Delete user from Firebase Auth
       await getAdminAuth().deleteUser(userId);
+      console.log(`Successfully deleted user ${userId} from Firebase Auth`);
+
       res.status(200).json({ message: "User deleted successfully" });
     } catch (error: any) {
       console.error("Error deleting user:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+
+      let errorMessage = "Failed to delete user";
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid admin credentials. Please check Firebase Admin configuration.";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = "User not found in Firebase Authentication.";
+      }
+
       res.status(500).json({ 
-        message: "Failed to delete user",
-        error: error.message 
+        message: errorMessage,
+        error: error.message,
+        code: error.code 
       });
     }
   });

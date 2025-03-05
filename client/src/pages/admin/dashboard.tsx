@@ -90,8 +90,8 @@ export default function AdminDashboard() {
         canListProperties: !currentValue
       });
 
-      setUsers(users.map(user => 
-        user.uid === userId 
+      setUsers(users.map(user =>
+        user.uid === userId
           ? { ...user, canListProperties: !currentValue }
           : user
       ));
@@ -126,11 +126,11 @@ export default function AdminDashboard() {
         throw new Error("User not found");
       }
 
-      // Delete the user document from Firestore
-      await deleteDoc(userRef);
+      console.log(`Starting deletion process for user: ${userId}`);
 
-      // Delete the user from Firebase Auth using admin SDK
+      // First try to delete the user from Firebase Auth
       try {
+        console.log('Sending delete request to backend...');
         const response = await fetch(`/api/admin/delete-user`, {
           method: 'POST',
           headers: {
@@ -139,26 +139,34 @@ export default function AdminDashboard() {
           body: JSON.stringify({ userId }),
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error('Failed to delete user from Firebase Auth');
+          throw new Error(data.message || 'Failed to delete user from Firebase Auth');
         }
-      } catch (authError) {
-        console.error("Error deleting user from Firebase Auth:", authError);
+
+        console.log('Successfully deleted user from Firebase Auth');
+
+        // Only proceed with Firestore deletion if Auth deletion was successful
+        await deleteDoc(userRef);
+        console.log('Successfully deleted user from Firestore');
+
+        // Update the local state
+        setUsers(users.filter(user => user.uid !== userId));
+
         toast({
-          title: "Warning",
-          description: "User data deleted but there was an issue removing the auth account. The user may still be able to sign in.",
+          title: "Success",
+          description: "User has been completely deleted from the system",
+        });
+      } catch (error: any) {
+        console.error("Error during user deletion:", error);
+
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete user. Please try again.",
           variant: "destructive",
         });
-        return;
       }
-
-      // Update the local state
-      setUsers(users.filter(user => user.uid !== userId));
-
-      toast({
-        title: "Success",
-        description: "User has been deleted successfully",
-      });
     } catch (error: any) {
       console.error("Error deleting user:", error);
       let errorMessage = "Failed to delete user";
@@ -215,11 +223,11 @@ export default function AdminDashboard() {
                 <TableCell>{user.displayName?.split('|')[0]}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
-                  {user.displayName?.includes('admin') 
-                    ? "Administrator" 
-                    : user.isLandlord 
-                    ? "Landlord" 
-                    : "Regular User"}
+                  {user.displayName?.includes('admin')
+                    ? "Administrator"
+                    : user.isLandlord
+                      ? "Landlord"
+                      : "Regular User"}
                 </TableCell>
                 <TableCell>
                   <Switch
