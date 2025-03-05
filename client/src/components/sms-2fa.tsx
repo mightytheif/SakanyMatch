@@ -65,7 +65,7 @@ export function SMS2FASetup() {
       setupRecaptcha();
 
       const multiFactorUser = user as unknown as MultiFactorUser;
-      const session = await multiFactorUser.multiFactor.getSession();
+      const session = await multiFactorUser.multiFactor?.getSession();
 
       const phoneInfoOptions = {
         phoneNumber: phoneNumber,
@@ -104,7 +104,7 @@ export function SMS2FASetup() {
       const multiFactorUser = user as unknown as MultiFactorUser;
       const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
       const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
-      await multiFactorUser.multiFactor.enroll(multiFactorAssertion, "Phone Number");
+      await multiFactorUser.multiFactor?.enroll(multiFactorAssertion, "Phone Number");
 
       toast({
         title: "Success",
@@ -134,9 +134,9 @@ export function SMS2FASetup() {
     try {
       setIsLoading(true);
       const multiFactorUser = user as unknown as MultiFactorUser;
-      const enrolledFactors = await multiFactorUser.multiFactor.getEnrolledFactors();
-      if (enrolledFactors.length > 0) {
-        await multiFactorUser.multiFactor.unenroll(enrolledFactors[0]);
+      const enrolledFactors = await multiFactorUser.multiFactor?.getEnrolledFactors();
+      if (enrolledFactors?.length > 0) {
+        await multiFactorUser.multiFactor?.unenroll(enrolledFactors[0]);
         toast({
           title: "Success",
           description: "Two-factor authentication has been disabled",
