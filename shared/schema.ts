@@ -37,6 +37,8 @@ export const properties = pgTable("properties", {
   features: json("features").$type<string[]>(),
   images: json("images").$type<string[]>(),
   userId: integer("user_id").references(() => users.id),
+  approvalStatus: text("approval_status").notNull().default('pending'), // 'pending', 'approved', 'rejected'
+  approvalNote: text("approval_note"), // For rejection reason
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Table,
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
         let errorMessage = "Failed to fetch users";
 
         if (error.code === "permission-denied") {
-          errorMessage = "You don't have permission to access user data. Please verify your admin privileges and ensure Firestore rules are properly configured.";
+          errorMessage = "You don't have permission to access user data. Please verify your admin privileges.";
         }
 
         setError(errorMessage);
@@ -135,7 +135,7 @@ export default function AdminDashboard() {
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include', // Important: include credentials for session cookie
+          credentials: 'include',
           body: JSON.stringify({ userId }),
         });
 
@@ -266,6 +266,14 @@ export default function AdminDashboard() {
             ))}
           </TableBody>
         </Table>
+      </div>
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Property Management</h2>
+        <Link href="/admin/property-approvals">
+          <Button className="w-full sm:w-auto">
+            Review Property Listings
+          </Button>
+        </Link>
       </div>
     </div>
   );

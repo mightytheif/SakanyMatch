@@ -29,6 +29,10 @@ export interface IStorage {
   getProperty(id: number): Promise<Property | undefined>;
   getAllProperties(): Promise<Property[]>;
   getFeaturedProperties(): Promise<Property[]>;
+  approveProperty(id: number): Promise<Property>;
+  rejectProperty(id: number, note: string): Promise<Property>;
+  deleteProperty(id: number, userId: number): Promise<void>;
+  getPendingProperties(): Promise<Property[]>;
 
   // Chat methods
   createMessage(message: InsertMessage): Promise<Message>;
@@ -81,7 +85,8 @@ export class MemStorage implements IStorage {
         type: "apartment",
         features: ["parking", "gym", "pool"],
         images: ["https://placehold.co/600x400"],
-        userId: 1
+        userId: 1,
+        approvalStatus: 'approved'
       },
       {
         title: "Spacious Almoroj Villa",
@@ -94,7 +99,8 @@ export class MemStorage implements IStorage {
         type: "house",
         features: ["garage", "garden", "fireplace"],
         images: ["https://placehold.co/600x400"],
-        userId: 1
+        userId: 1,
+        approvalStatus: 'approved'
       }
     ];
 
@@ -188,6 +194,8 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       features: insertProperty.features ?? [],
       images: insertProperty.images ?? [],
+      approvalStatus: 'pending', // Added approval status
+      approvalNote: null // Added approval note
     };
     this.properties.set(id, property);
     return property;
@@ -198,11 +206,63 @@ export class MemStorage implements IStorage {
   }
 
   async getAllProperties(): Promise<Property[]> {
-    return Array.from(this.properties.values());
+    return Array.from(this.properties.values())
+      .filter(property => property.approvalStatus === 'approved');
   }
 
   async getFeaturedProperties(): Promise<Property[]> {
     return Array.from(this.properties.values()).slice(0, 3);
+  }
+
+  async approveProperty(id: number): Promise<Property> {
+    const property = await this.getProperty(id);
+    if (!property) {
+      throw new Error("Property not found");
+    }
+
+    const updatedProperty = {
+      ...property,
+      approvalStatus: 'approved',
+      approvalNote: null
+    };
+
+    this.properties.set(id, updatedProperty);
+    return updatedProperty;
+  }
+
+  async rejectProperty(id: number, note: string): Promise<Property> {
+    const property = await this.getProperty(id);
+    if (!property) {
+      throw new Error("Property not found");
+    }
+
+    const updatedProperty = {
+      ...property,
+      approvalStatus: 'rejected',
+      approvalNote: note
+    };
+
+    this.properties.set(id, updatedProperty);
+    return updatedProperty;
+  }
+
+  async deleteProperty(id: number, userId: number): Promise<void> {
+    const property = await this.getProperty(id);
+    if (!property) {
+      throw new Error("Property not found");
+    }
+
+    // Check if user owns the property
+    if (property.userId !== userId) {
+      throw new Error("Unauthorized to delete this property");
+    }
+
+    this.properties.delete(id);
+  }
+
+  async getPendingProperties(): Promise<Property[]> {
+    return Array.from(this.properties.values())
+      .filter(property => property.approvalStatus === 'pending');
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {

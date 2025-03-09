@@ -97,6 +97,72 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Admin routes for property approval
+  app.post("/api/properties/:id/approve", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      const property = await storage.approveProperty(id);
+      res.json(property);
+    } catch (error: any) {
+      console.error("Error approving property:", error);
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/properties/:id/reject", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      const { note } = req.body;
+      if (!note) {
+        return res.status(400).json({ message: "Rejection note is required" });
+      }
+      const property = await storage.rejectProperty(id, note);
+      res.json(property);
+    } catch (error: any) {
+      console.error("Error rejecting property:", error);
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Route for property deletion
+  app.delete("/api/properties/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteProperty(id, req.user.id);
+      res.sendStatus(200);
+    } catch (error: any) {
+      console.error("Error deleting property:", error);
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Route to get pending properties for admin
+  app.get("/api/properties/pending", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    try {
+      const properties = await storage.getPendingProperties();
+      res.json(properties);
+    } catch (error: any) {
+      console.error("Error fetching pending properties:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Chat endpoints
   app.get("/api/conversations", async (req, res) => {
     if (!req.isAuthenticated()) {
