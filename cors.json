@@ -1,0 +1,12 @@
+[
+  {
+    "origin": [
+      "https://7093985d-de01-4cff-979c-da1ab5777001-00-1gogxpq1xv11m.spock.replit.dev",
+      "https://*.replit.dev",
+      "https://*.repl.co"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "x-goog-meta-*"]
+  }
+]
