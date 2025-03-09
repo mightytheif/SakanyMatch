@@ -86,32 +86,53 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
       const storageRef = ref(storage, `property-images/${fileName}`);
       console.log('Created storage reference:', `property-images/${fileName}`);
 
-      console.log('Uploading file:', fileName);
-      const uploadResult = await uploadBytes(storageRef, file);
-      console.log('Upload completed:', uploadResult);
+      // Log Storage bucket info
+      console.log('Storage bucket:', storage.app.options.storageBucket);
 
-      if (!uploadResult) {
-        throw new Error("Upload failed - no upload result returned");
+      try {
+        console.log('Attempting upload...');
+        const uploadResult = await uploadBytes(storageRef, file);
+        console.log('Upload completed:', uploadResult);
+
+        if (!uploadResult) {
+          throw new Error("Upload failed - no upload result returned");
+        }
+
+        console.log('Getting download URL...');
+        const url = await getDownloadURL(uploadResult.ref);
+        console.log('Got download URL:', url);
+
+        if (!url) {
+          throw new Error("Failed to get download URL");
+        }
+
+        onChange([...value, url]);
+
+        toast({
+          title: "Success",
+          description: "Image uploaded successfully",
+        });
+      } catch (uploadError: any) {
+        console.error("Upload operation error:", uploadError);
+        console.error("Error code:", uploadError.code);
+        console.error("Error message:", uploadError.message);
+        console.error("Error details:", uploadError.serverResponse);
+
+        if (uploadError.code === 'storage/unauthorized') {
+          throw new Error("Permission denied. Please check your Firebase Storage rules.");
+        } else if (uploadError.code === 'storage/canceled') {
+          throw new Error("Upload was canceled.");
+        } else if (uploadError.code === 'storage/unknown') {
+          throw new Error("An unknown error occurred. Please try again.");
+        }
+
+        throw uploadError;
       }
-
-      console.log('Getting download URL...');
-      const url = await getDownloadURL(uploadResult.ref);
-      console.log('Got download URL:', url);
-
-      if (!url) {
-        throw new Error("Failed to get download URL");
-      }
-
-      onChange([...value, url]);
-
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
     } catch (error: any) {
       console.error("Upload error:", error);
       console.error("Error code:", error.code);
       console.error("Error message:", error.message);
+      console.error("Storage bucket used:", storage?.app.options.storageBucket);
 
       let errorMessage = "Failed to upload image. Please try again.";
 
