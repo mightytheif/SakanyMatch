@@ -4,6 +4,7 @@ import { Loader2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from "firebase/storage";
 import { app } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ImageUploadProps {
   value: string[];
@@ -14,11 +15,12 @@ interface ImageUploadProps {
 export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   let storage: FirebaseStorage | undefined;
   try {
     storage = getStorage(app);
-    console.log("Firebase Storage initialized successfully."); // Added logging
+    console.log("Firebase Storage initialized successfully.");
   } catch (error) {
     console.error("Failed to initialize Firebase Storage:", error);
     toast({
@@ -32,12 +34,23 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('Starting upload process for file:', file.name); // Added logging
+    console.log('Starting upload process for file:', file.name);
+
+    // Check authentication
+    if (!user) {
+      console.log('User not authenticated');
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to upload images",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Validate file type
     const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
     if (!supportedTypes.includes(file.type)) {
-      console.log('Invalid file type:', file.type); // Added logging
+      console.log('Invalid file type:', file.type);
       toast({
         title: "Invalid file type",
         description: "Please upload a JPG, JPEG, PNG, or GIF image",
@@ -48,7 +61,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      console.log('File too large:', file.size); // Added logging
+      console.log('File too large:', file.size);
       toast({
         title: "File too large",
         description: "Image size should be less than 5MB",
@@ -64,12 +77,14 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
 
       setIsUploading(true);
       console.log('Starting upload process...');
+      console.log('User authenticated:', !!user?.uid);
 
-      // Create a unique file path with timestamp and file name
+      // Create a unique file path with timestamp and user ID
       const timestamp = Date.now();
-      const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+      const fileName = `${timestamp}-${user.uid}-${sanitizedFileName}`;
       const storageRef = ref(storage, `property-images/${fileName}`);
-      console.log('Created storage reference:', `property-images/${fileName}`); // Added logging
+      console.log('Created storage reference:', `property-images/${fileName}`);
 
       console.log('Uploading file:', fileName);
       const uploadResult = await uploadBytes(storageRef, file);
@@ -87,7 +102,6 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
         throw new Error("Failed to get download URL");
       }
 
-      // Update the form
       onChange([...value, url]);
 
       toast({
@@ -123,7 +137,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
         event.target.value = '';
       }
     }
-  }, [value, onChange, toast, storage]);
+  }, [value, onChange, toast, storage, user]);
 
   return (
     <div className="space-y-4">
@@ -151,7 +165,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
           <Button
             type="button"
             variant="outline"
-            disabled={isUploading}
+            disabled={isUploading || !user}
             onClick={() => document.getElementById("image-upload")?.click()}
           >
             {isUploading ? (
@@ -173,8 +187,11 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
           />
         </div>
         <p className="text-sm text-muted-foreground">
-          Supported formats: JPG, JPEG, PNG, GIF. Maximum size: 5MB per image.
-          For best quality, use images at least 800x600 pixels.
+          {!user ? (
+            "Please sign in to upload images."
+          ) : (
+            "Supported formats: JPG, JPEG, PNG, GIF. Maximum size: 5MB per image. For best quality, use images at least 800x600 pixels."
+          )}
         </p>
       </div>
     </div>
