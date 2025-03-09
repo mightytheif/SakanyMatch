@@ -36,7 +36,6 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
 
     console.log('Starting upload process for file:', file.name);
 
-    // Check authentication
     if (!user) {
       console.log('User not authenticated');
       toast({
@@ -88,10 +87,31 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
 
       // Log Storage bucket info
       console.log('Storage bucket:', storage.app.options.storageBucket);
+      console.log('Current origin:', window.location.origin);
 
       try {
         console.log('Attempting upload...');
-        const uploadResult = await uploadBytes(storageRef, file);
+
+        // Convert file to ArrayBuffer
+        const fileBuffer = await file.arrayBuffer();
+
+        // Create a new Blob with the correct content type
+        const blob = new Blob([fileBuffer], { type: file.type });
+
+        // Add metadata including CORS headers
+        const metadata = {
+          contentType: file.type,
+          customMetadata: {
+            'origin': window.location.origin,
+            'user-id': user.uid,
+            'filename': fileName
+          },
+          cacheControl: 'public,max-age=3600',
+        };
+
+        console.log('Uploading with metadata:', metadata);
+
+        const uploadResult = await uploadBytes(storageRef, blob, metadata);
         console.log('Upload completed:', uploadResult);
 
         if (!uploadResult) {
@@ -117,43 +137,41 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
         console.error("Error code:", uploadError.code);
         console.error("Error message:", uploadError.message);
         console.error("Error details:", uploadError.serverResponse);
+        console.error("Current origin:", window.location.origin);
+        console.error("Storage bucket:", storage.app.options.storageBucket);
+
+        let errorMessage = "Failed to upload image. Please try again.";
 
         if (uploadError.code === 'storage/unauthorized') {
-          throw new Error("Permission denied. Please check your Firebase Storage rules.");
+          errorMessage = "Permission denied. Please check your Firebase Storage rules.";
         } else if (uploadError.code === 'storage/canceled') {
-          throw new Error("Upload was canceled.");
+          errorMessage = "Upload was canceled.";
         } else if (uploadError.code === 'storage/unknown') {
-          throw new Error("An unknown error occurred. Please try again.");
+          errorMessage = "An unknown error occurred. Please try again.";
         }
+
+        toast({
+          title: "Upload failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
 
         throw uploadError;
       }
     } catch (error: any) {
-      console.error("Upload error:", error);
+      console.error("General error:", error);
       console.error("Error code:", error.code);
       console.error("Error message:", error.message);
       console.error("Storage bucket used:", storage?.app.options.storageBucket);
-
-      let errorMessage = "Failed to upload image. Please try again.";
-
-      if (error.code === 'storage/unauthorized') {
-        errorMessage = "Permission denied. Please check your Firebase Storage rules.";
-      } else if (error.code === 'storage/canceled') {
-        errorMessage = "Upload was canceled.";
-      } else if (error.code === 'storage/unknown') {
-        errorMessage = "An unknown error occurred. Please try again.";
-      } else if (error.message === "Storage not initialized") {
-        errorMessage = "Storage service is not available. Please check your Firebase configuration.";
-      }
+      console.error("Current origin:", window.location.origin);
 
       toast({
         title: "Upload failed",
-        description: errorMessage,
+        description: error.message || "Failed to upload image. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsUploading(false);
-      // Reset the input value to allow uploading the same file again
       if (event.target) {
         event.target.value = '';
       }
