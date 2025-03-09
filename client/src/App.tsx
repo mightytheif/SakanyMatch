@@ -14,6 +14,7 @@ import ProfilePage from "@/pages/profile";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { ProtectedAdminRoute } from "@/lib/protected-admin-route";
 import AdminDashboard from "@/pages/admin/dashboard";
+import PropertyApprovals from "@/pages/admin/property-approvals";
 import Messages from "@/pages/messages";
 import AddProperty from "@/pages/add-property";
 import { ProtectedLandlordRoute } from "@/lib/protected-landlord-route";
@@ -30,6 +31,7 @@ function Router() {
       <ProtectedRoute path="/messages" component={Messages} />
       <ProtectedLandlordRoute path="/properties/add" component={AddProperty} />
       <ProtectedAdminRoute path="/admin/dashboard" component={AdminDashboard} />
+      <ProtectedAdminRoute path="/admin/property-approvals" component={PropertyApprovals} />
       <Route component={NotFound} />
     </Switch>
   );
