@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL, FirebaseStorage } from "firebase/storage";
 import { app } from "@/lib/firebase";
 
 interface ImageUploadProps {
@@ -15,14 +15,15 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
-  let storage;
+  let storage: FirebaseStorage | undefined;
   try {
     storage = getStorage(app);
+    console.log("Firebase Storage initialized successfully."); // Added logging
   } catch (error) {
     console.error("Failed to initialize Firebase Storage:", error);
     toast({
       title: "Storage Error",
-      description: "Failed to initialize storage. Please try again later.",
+      description: "Failed to initialize storage. Please check your Firebase configuration.",
       variant: "destructive",
     });
   }
@@ -99,7 +100,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
       } else if (error.code === 'storage/unknown') {
         errorMessage = "An unknown error occurred. Please try again.";
       } else if (error.message === "Storage not initialized") {
-        errorMessage = "Storage service is not available. Please try again later.";
+        errorMessage = "Storage service is not available. Please check your Firebase configuration.";
       }
 
       toast({
