@@ -12,7 +12,11 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-console.log('Initializing Firebase app...');
+console.log('Initializing Firebase app with config:', {
+  projectId: firebaseConfig.projectId,
+  storageBucket: firebaseConfig.storageBucket,
+}); // Log config without sensitive data
+
 const app = initializeApp(firebaseConfig);
 
 console.log('Initializing Firebase auth...');

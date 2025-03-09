@@ -32,9 +32,12 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('Starting upload process for file:', file.name); // Added logging
+
     // Validate file type
     const supportedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
     if (!supportedTypes.includes(file.type)) {
+      console.log('Invalid file type:', file.type); // Added logging
       toast({
         title: "Invalid file type",
         description: "Please upload a JPG, JPEG, PNG, or GIF image",
@@ -45,6 +48,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
+      console.log('File too large:', file.size); // Added logging
       toast({
         title: "File too large",
         description: "Image size should be less than 5MB",
@@ -65,6 +69,7 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
       const timestamp = Date.now();
       const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const storageRef = ref(storage, `property-images/${fileName}`);
+      console.log('Created storage reference:', `property-images/${fileName}`); // Added logging
 
       console.log('Uploading file:', fileName);
       const uploadResult = await uploadBytes(storageRef, file);
@@ -91,6 +96,9 @@ export function ImageUpload({ value, onChange, onRemove }: ImageUploadProps) {
       });
     } catch (error: any) {
       console.error("Upload error:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+
       let errorMessage = "Failed to upload image. Please try again.";
 
       if (error.code === 'storage/unauthorized') {
