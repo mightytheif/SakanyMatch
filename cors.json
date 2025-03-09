@@ -5,8 +5,20 @@
       "https://*.replit.dev",
       "https://*.repl.co"
     ],
-    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "x-goog-meta-*"]
+    "responseHeader": [
+      "Content-Type",
+      "x-goog-meta-*",
+      "x-goog-*",
+      "content-length",
+      "Authorization",
+      "Content-Range",
+      "x-firebase-storage-version",
+      "accept",
+      "origin",
+      "access-control-request-method",
+      "access-control-request-headers"
+    ]
   }
 ]
